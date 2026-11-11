@@ -11,10 +11,11 @@
     button:hover { opacity: 0.92; transform: translateY(-1px); }
     button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
     input[type="number"] { background: #0f172a; color: #38bdf8; border: 1px solid #475569; border-radius: 6px; text-align: center; font-weight: 800; }
+    input:disabled { opacity: 0.4; }
 
     .topbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #1e293b; border-bottom: 2px solid #334155; flex-wrap: wrap; gap: 10px; }
     .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
-    .badge { padding: 6px 12px; border-radius: 99px; font-weight: 700; background: #0f172a; border: 1px solid #334155; }
+    .badge { padding: 6px 12px; border-radius: 99px; font-weight: 700; background: #0f172a; border: 1px solid #334155; font-size: 13px; }
     .timer-badge { padding: 6px 14px; border-radius: 99px; font-weight: 900; font-size: 16px; background: #7c2d12; color: #fed7aa; border: 2px solid #f97316; }
     .timer-badge.alarm { background: #dc2626; color: #fff; animation: blink 0.6s infinite; }
     @keyframes blink { 50% { opacity: 0.45; } }
@@ -36,13 +37,14 @@
 
     .team-card { position: absolute; width: 235px; background: rgba(30, 41, 59, 0.95); border: 2px solid #475569; border-radius: 14px; padding: 10px 12px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 10; }
     .team-card.locked { border-color: #22c55e; box-shadow: 0 0 16px rgba(34, 197, 94, 0.35); }
+    .team-card.sent { border-color: #38bdf8; box-shadow: 0 0 16px rgba(56, 189, 248, 0.4); }
     .pos-1 { top: 4px; left: 490px; transform: translateX(-50%); }
     .pos-2 { top: 155px; right: 8px; }
     .pos-3 { bottom: 12px; right: 75px; }
     .pos-4 { bottom: 12px; left: 75px; }
     .pos-5 { top: 155px; left: 8px; }
     .team-title { font-weight: 800; font-size: 15px; margin-bottom: 3px; display: flex; justify-content: space-between; align-items: center; }
-    .team-status { font-size: 14px; font-weight: 800; margin: 3px 0; color: #38bdf8; }
+    .team-status { font-size: 13px; font-weight: 800; margin: 3px 0; color: #38bdf8; }
     .host-manual { display: flex; justify-content: center; align-items: center; gap: 3px; margin: 5px 0; background: #0f172a; padding: 4px; border-radius: 8px; }
     .btn-mini { width: 26px; height: 26px; background: #334155; color: white; font-size: 11px; border-radius: 6px; }
     .team-basket { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 5px 6px; margin-top: 5px; min-height: 44px; text-align: left; }
@@ -63,11 +65,12 @@
     .warn { background: #7c2d12; color: #fed7aa; padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-top: 10px; }
     .rank-row { display: flex; justify-content: space-between; padding: 8px 12px; background: #0f172a; border-radius: 8px; margin: 6px 0; font-weight: 700; }
 
-    .phone-view { max-width: 420px; margin: 25px auto; background: #1e293b; border-radius: 20px; padding: 24px 18px; text-align: center; border: 2px solid #38bdf8; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
-    .ctrl-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 18px 0; }
-    .btn-step { width: 48px; height: 48px; font-size: 18px; background: #334155; color: white; border-radius: 12px; }
-    .phone-input { width: 110px; height: 56px; font-size: 32px; }
     #phoneView { display: none; padding: 0 12px; }
+    .phone-view { max-width: 420px; margin: 20px auto; background: #1e293b; border-radius: 20px; padding: 22px 14px; text-align: center; border: 2px solid #38bdf8; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
+    .ctrl-row { display: flex; justify-content: center; align-items: center; gap: 7px; margin: 16px 0; }
+    .btn-step { width: 42px; height: 48px; font-size: 16px; background: #334155; color: white; border-radius: 12px; }
+    .phone-input { width: 88px; height: 56px; font-size: 30px; }
+    #phMsg { margin-top: 16px; font-size: 17px; font-weight: 800; line-height: 1.5; min-height: 52px; }
   </style>
 </head>
 <body>
@@ -75,10 +78,11 @@
   <!-- HOST-ANSICHT (Beamer) -->
   <div id="hostView">
     <div class="topbar">
-      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
         <strong style="font-size:17px;">🐟 Fischerei-Simulation</strong>
         <span class="badge">Runde <span id="roundNum">1</span> / 3</span>
         <span class="timer-badge" id="hostTimer">⏱️ 60s</span>
+        <span class="badge" id="connBadge">📡 verbinde …</span>
       </div>
 
       <div class="controls">
@@ -119,7 +123,7 @@
   <div class="modal" id="qrModal">
     <div class="modal-box">
       <h2>📱 QR-Codes für die Gruppen</h2>
-      <p style="color:#94a3b8; margin-top:6px; font-size:14px;">Jede Gruppe scannt ihren Code. Auf dem Handy überlegt sie ihre Fangmenge und nennt sie dem Host, der sie in die Gruppenkarte einträgt.</p>
+      <p style="color:#94a3b8; margin-top:6px; font-size:14px;">Jede Gruppe scannt ihren Code. Fangmenge, Status und Timer laufen live zwischen Handy und Beamer.</p>
       <div class="qr-grid" id="qrGrid"></div>
       <div class="warn" id="qrWarn" style="display:none;">⚠️ Die Seite ist lokal geöffnet (file://). Handys erreichen sie nur, wenn sie online ist, z. B. über GitHub Pages.</div>
       <button class="btn-primary" style="margin-top:14px;" onclick="toggleQR(false)">Schließen</button>
@@ -140,19 +144,27 @@
   <div id="phoneView">
     <div class="phone-view">
       <h2 id="phTitle">Gruppe 1</h2>
-      <p style="color:#94a3b8; margin-top:6px; font-size:14px;">Wie viele Fische fangt ihr in dieser Runde?</p>
-      <div class="ctrl-row">
-        <button class="btn-step" onclick="phAdj(-5)">−5</button>
-        <button class="btn-step" onclick="phAdj(-1)">−1</button>
-        <input type="number" id="phInput" class="phone-input" value="0" min="0" max="500" onchange="phSet(this.value)">
-        <button class="btn-step" onclick="phAdj(1)">+1</button>
-        <button class="btn-step" onclick="phAdj(5)">+5</button>
+      <div id="phConn" style="font-size:12px; color:#94a3b8; margin-top:4px;"></div>
+      <div id="phRound" style="margin-top:10px; font-weight:800; color:#38bdf8; font-size:16px;"></div>
+      <div class="timer-badge" id="phTimer" style="display:inline-block; margin-top:10px;">⏱️ –</div>
+
+      <div id="phControls">
+        <p style="color:#94a3b8; margin-top:16px; font-size:14px;">Wie viele Fische fangt ihr in dieser Runde?</p>
+        <div class="ctrl-row">
+          <button class="btn-step" onclick="phAdj(-5)">−5</button>
+          <button class="btn-step" onclick="phAdj(-1)">−1</button>
+          <input type="number" id="phInput" class="phone-input" value="0" min="0" max="500" onchange="phSet(this.value)">
+          <button class="btn-step" onclick="phAdj(1)">+1</button>
+          <button class="btn-step" onclick="phAdj(5)">+5</button>
+        </div>
+        <button class="btn-green" id="phSend" style="width:100%; padding:14px; font-size:16px;" onclick="phConfirm()">📤 Senden</button>
       </div>
-      <button class="btn-green" style="width:100%; padding:14px; font-size:16px;" onclick="phConfirm()">✅ Entscheidung festlegen</button>
-      <div id="phMsg" style="margin-top:16px; font-size:18px; font-weight:800; color:#4ade80; min-height:52px;"></div>
+
+      <div id="phMsg"></div>
     </div>
   </div>
 
+<script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
 <script>
   const $ = id => document.getElementById(id);
   const RATES = [0.5, 0.25, 0.1];
@@ -160,20 +172,96 @@
   const COLORS = ['#f87171', '#fbbf24', '#4ade80', '#38bdf8', '#c084fc'];
   const CX = 490, CY = 330, PR = 150;
 
+  /* ================= Live-Verbindung (MQTT über WebSocket) =================
+     Öffentliche Broker, kein Account und kein eigener Server nötig.
+     Host -> Handys: Topic  fischsim/<raum>/state  (retained)
+     Handys -> Host: Topic  fischsim/<raum>/up                              */
+  const BROKERS = ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt'];
+  const params = new URLSearchParams(location.search);
+  const PHONE_G = parseInt(params.get('g'), 10);
+  const IS_PHONE = PHONE_G >= 1 && PHONE_G <= 5;
+
+  function randId(n) { let s = ''; const c = 'abcdefghijkmnpqrstuvwxyz23456789'; for (let i = 0; i < n; i++) s += c[Math.floor(Math.random() * c.length)]; return s; }
+
+  let ROOM = '';
+  if (IS_PHONE) ROOM = (params.get('room') || '').replace(/[^a-z0-9]/gi, '');
+  else {
+    try { ROOM = localStorage.getItem('fischRoom') || ''; } catch (e) {}
+    if (!ROOM) { ROOM = randId(8); try { localStorage.setItem('fischRoom', ROOM); } catch (e) {} }
+  }
+  const T_STATE = 'fischsim/' + ROOM + '/state';
+  const T_UP = 'fischsim/' + ROOM + '/up';
+
+  let mq = null, connOk = false;
+
+  function mqttStart(role, onMessage, onConnect, onStatus) {
+    if (typeof mqtt === 'undefined') { onStatus(false, 'lib'); return; }
+    let idx = 0, tm = null;
+    function open() {
+      if (mq) { try { mq.end(true); } catch (e) {} }
+      let ok = false;
+      mq = mqtt.connect(BROKERS[idx % BROKERS.length], {
+        clientId: 'fs_' + role + '_' + randId(8), reconnectPeriod: 2000, connectTimeout: 6000, clean: true
+      });
+      mq.on('connect', () => { ok = true; clearTimeout(tm); connOk = true; onStatus(true); onConnect(); });
+      mq.on('close', () => { connOk = false; onStatus(false); });
+      mq.on('message', (t, p, pk) => { try { onMessage(t, JSON.parse(p.toString()), pk); } catch (e) {} });
+      clearTimeout(tm);
+      tm = setTimeout(() => { if (!ok) { idx++; open(); } }, 7000);
+    }
+    open();
+  }
+
+  /* ================= Spielzustand (Host) ================= */
   let secret = false;
   let S = newState(50);
 
   function newState(init) {
     return {
-      init: init, pool: init, max: init, round: 1, phase: 'harvest', over: false, collapsed: false,
+      rid: randId(6), init: init, pool: init, max: init, round: 1, phase: 'harvest', over: false, collapsed: false, closed: false,
       catches: [0, 0, 0, 0, 0], locked: [false, false, false, false, false],
+      submitted: [null, null, null, null, null], seen: [false, false, false, false, false],
       totals: [0, 0, 0, 0, 0], hist: []
     };
   }
 
-  /* ---------- Hilfsfunktionen ---------- */
   function revealed() { return !secret || S.over; }
   function sum(a) { return a.reduce((x, y) => x + y, 0); }
+
+  /* ---------- Snapshot für die Handys ---------- */
+  function snapshot() {
+    const rev = revealed();
+    const l = S.hist[S.hist.length - 1];
+    return {
+      type: 'state', rid: S.rid, t: Date.now(), round: S.round, phase: S.phase, over: S.over, collapsed: S.collapsed, closed: S.closed,
+      locked: S.locked, submitted: S.submitted, catches: S.catches, totals: S.totals,
+      pool: rev ? S.pool : null, max: rev ? S.max : null,
+      timerEnd: tInt ? timerEnd : 0,
+      last: l ? { round: S.hist.length, asked: l.asked, actual: l.actual, start: rev ? l.start : null, end: rev ? l.end : null } : null
+    };
+  }
+  let pubT = null;
+  function schedulePublish() { clearTimeout(pubT); pubT = setTimeout(publishState, 150); }
+  function publishState() {
+    if (!mq || !mq.connected) return;
+    mq.publish(T_STATE, JSON.stringify(snapshot()), { retain: true, qos: 1 });
+  }
+
+  /* ---------- Nachrichten von den Handys ---------- */
+  function onUp(topic, m) {
+    if (topic !== T_UP) return;
+    const g = parseInt(m.g, 10) - 1;
+    if (!(g >= 0 && g < 5)) return;
+    if (m.type === 'hello') { S.seen[g] = true; render(); }
+    else if (m.type === 'catch') {
+      S.seen[g] = true;
+      if (m.rid === S.rid && m.round === S.round && S.phase === 'harvest' && !S.over && !S.closed && !S.locked[g]) {
+        const v = clampC(m.v);
+        S.catches[g] = v; S.submitted[g] = v;
+      }
+      render();
+    }
+  }
 
   /* ---------- Rendering ---------- */
   function render() {
@@ -182,7 +270,7 @@
     $('fishCountTxt').textContent = revealed() ? S.pool : '??';
 
     const ratio = S.pool / S.max;
-    let color = '#22c55e', zone;
+    let color, zone;
     const rateTxt = '+' + Math.round(RATES[S.round - 1] * 100) + '% Geburten';
     if (!revealed()) { color = '#64748b'; zone = '❓ Bestand unbekannt'; }
     else if (S.pool === 0) { color = '#7f1d1d'; zone = '💀 Bestand zusammengebrochen'; }
@@ -197,6 +285,7 @@
     renderTracker();
     renderAction();
     syncFish();
+    schedulePublish();
   }
 
   function renderAction() {
@@ -211,11 +300,18 @@
     for (let i = 0; i < 5; i++) {
       const card = $('card-' + (i + 1));
       card.classList.toggle('locked', S.locked[i]);
+      card.classList.toggle('sent', editable && S.submitted[i] !== null && !S.locked[i]);
       const dis = editable ? '' : 'disabled';
       const icons = '🐟'.repeat(Math.min(S.totals[i], 120)) + (S.totals[i] > 120 ? '…' : '');
+      let st;
+      if (S.phase === 'next' || S.over) st = '🎣 gefangen: ' + (S.hist.length ? S.hist[S.hist.length - 1].actual[i] : 0);
+      else if (S.locked[i]) st = '✅ fixiert: ' + S.catches[i];
+      else if (S.submitted[i] !== null) st = '📱 gesendet: ' + S.submitted[i];
+      else if (S.seen[i]) st = '📱 verbunden – überlegt …';
+      else st = '⏳ überlegt …';
       card.innerHTML =
         '<div class="team-title"><span style="color:' + COLORS[i] + '">Gruppe ' + (i + 1) + '</span><span>' + (S.locked[i] ? '🔒' : '') + '</span></div>' +
-        '<div class="team-status">' + (S.phase === 'next' || S.over ? '🎣 gefangen: ' + (S.hist.length ? S.hist[S.hist.length - 1].actual[i] : 0) : (S.locked[i] ? '✅ fixiert: ' + S.catches[i] : '⏳ überlegt …')) + '</div>' +
+        '<div class="team-status">' + st + '</div>' +
         '<div class="host-manual">' +
           '<button class="btn-mini" ' + dis + ' onclick="adj(' + i + ',-5)">−5</button>' +
           '<button class="btn-mini" ' + dis + ' onclick="adj(' + i + ',-1)">−1</button>' +
@@ -249,7 +345,7 @@
 
   function banner(t) { $('bannerMsg').textContent = t; }
 
-  /* ---------- Eingaben ---------- */
+  /* ---------- Eingaben (Host) ---------- */
   function clampC(v) { v = parseInt(v, 10); if (isNaN(v) || v < 0) v = 0; return Math.min(v, 500); }
   function adj(i, d) { if (S.phase !== 'harvest' || S.over) return; S.catches[i] = clampC(S.catches[i] + d); render(); }
   function setC(i, v) { if (S.phase !== 'harvest' || S.over) return; S.catches[i] = clampC(v); render(); }
@@ -262,10 +358,13 @@
     if (isNaN(v)) v = 50;
     v = Math.max(5, Math.min(500, v));
     $('initFishInput').value = v;
+    const seen = S.seen;
     S = newState(v);
+    S.seen = seen;
     stopTimer();
     fishes = [];
     startBanner();
+    $('resultModal').classList.remove('active');
     render();
   }
 
@@ -275,7 +374,7 @@
   }
 
   function startBanner() {
-    banner('Runde ' + S.round + ': Gruppen überlegen ihren Fang. Timer starten oder Fangmengen direkt eintragen!');
+    banner('Runde ' + S.round + ': Gruppen geben ihren Fang per Handy ein. Timer starten oder Mengen direkt eintragen!');
   }
 
   /* ---------- Spiellogik ---------- */
@@ -286,18 +385,19 @@
 
   function harvest() {
     stopTimer();
-    const demand = sum(S.catches);
+    const asked = S.catches.slice();
+    const demand = sum(asked);
     const start = S.pool;
-    let actual = S.catches.slice();
+    let actual = asked.slice();
 
     if (demand > S.pool) {
       // Nicht genug Fische: anteilig verteilen (größte Reste zuerst)
-      const exact = S.catches.map(c => c * S.pool / demand);
+      const exact = asked.map(c => c * S.pool / demand);
       actual = exact.map(Math.floor);
       let rest = S.pool - sum(actual);
       const order = exact.map((e, i) => ({ i: i, fr: e - Math.floor(e) })).sort((a, b) => b.fr - a.fr);
       for (let k = 0; k < order.length && rest > 0; k++) {
-        if (actual[order[k].i] < S.catches[order[k].i]) { actual[order[k].i]++; rest--; }
+        if (actual[order[k].i] < asked[order[k].i]) { actual[order[k].i]++; rest--; }
       }
     }
 
@@ -313,7 +413,7 @@
       S.pool += born;
     }
 
-    S.hist.push({ start: start, demand: demand, caught: caught, afterCatch: afterCatch, born: born, end: S.pool, actual: actual });
+    S.hist.push({ start: start, demand: demand, caught: caught, afterCatch: afterCatch, born: born, end: S.pool, actual: actual, asked: asked });
     S.phase = 'next';
 
     let msg = 'Runde ' + S.round + ' beendet: ' + caught + ' Fische gefangen';
@@ -335,8 +435,10 @@
   function nextRound() {
     S.round++;
     S.phase = 'harvest';
+    S.closed = false;
     S.catches = [0, 0, 0, 0, 0];
     S.locked = [false, false, false, false, false];
+    S.submitted = [null, null, null, null, null];
     startBanner();
     render();
   }
@@ -354,8 +456,8 @@
     $('resultModal').classList.add('active');
   }
 
-  /* ---------- Timer ---------- */
-  let tLeft = 60, tInt = null;
+  /* ---------- Timer (Host; Handys rechnen mit der Endzeit) ---------- */
+  let tLeft = 60, tInt = null, timerEnd = 0;
   function updateTimerUI() {
     const el = $('hostTimer');
     el.textContent = '⏱️ ' + tLeft + 's';
@@ -371,25 +473,35 @@
       o.start(); o.stop(ac.currentTime + 0.6);
     } catch (e) {}
   }
-  function startTimer() {
-    stopTimer(true);
-    tLeft = 60;
-    tInt = setInterval(() => {
-      tLeft--;
-      if (tLeft <= 0) {
-        tLeft = 0; clearInterval(tInt); tInt = null; beep();
-        banner('⏰ Zeit abgelaufen! Fangmengen eintragen und "Fang ausführen" klicken.');
-      }
+  function tick() {
+    tLeft = Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000));
+    if (tLeft <= 0) {
+      clearInterval(tInt); tInt = null; timerEnd = 0;
+      S.closed = true;
+      beep();
+      banner('⏰ Zeit abgelaufen! Eingaben der Handys sind geschlossen. "Fang ausführen" klicken.');
       updateTimerUI();
-    }, 1000);
+      render();
+      return;
+    }
     updateTimerUI();
   }
-  function stopTimer(keep) {
+  function startTimer() {
+    if (tInt) clearInterval(tInt);
+    S.closed = false;
+    timerEnd = Date.now() + 60000;
+    tInt = setInterval(tick, 250);
+    tick();
+    render();
+  }
+  function stopTimer() {
     if (tInt) { clearInterval(tInt); tInt = null; }
-    if (!keep) { tLeft = 60; }
+    timerEnd = 0; tLeft = 60;
     updateTimerUI();
   }
-  function toggleTimer() { if (tInt) stopTimer(); else startTimer(); }
+  function toggleTimer() {
+    if (tInt) { stopTimer(); render(); } else if (S.phase === 'harvest' && !S.over) startTimer();
+  }
 
   /* ---------- QR-Codes ---------- */
   function baseUrl() { return location.origin + location.pathname; }
@@ -399,7 +511,7 @@
       $('qrWarn').style.display = location.protocol === 'file:' ? 'block' : 'none';
       let h = '';
       for (let i = 1; i <= 5; i++) {
-        const url = base + '?g=' + i;
+        const url = base + '?room=' + ROOM + '&g=' + i;
         const src = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(url);
         h += '<div class="qr-item"><strong style="color:' + COLORS[i - 1] + '">Gruppe ' + i + '</strong><br><img src="' + src + '" alt="QR Gruppe ' + i + '"></div>';
       }
@@ -456,30 +568,135 @@
     requestAnimationFrame(loop);
   }
 
-  /* ---------- Handy-Ansicht ---------- */
-  let phVal = 0, phGroup = 1;
-  function phSet(v) { phVal = clampC(v); $('phInput').value = phVal; $('phMsg').textContent = ''; }
-  function phAdj(d) { phSet(phVal + d); }
-  function phConfirm() {
-    $('phMsg').innerHTML = '✅ Eure Zahl: ' + phVal + ' 🐟<br><span style="font-size:14px;color:#94a3b8;">Nennt sie jetzt dem Host.</span>';
+  /* ================= Handy-Ansicht ================= */
+  let ST = null, offset = 0, pending = null, phVal = 0, phKey = '';
+
+  function phCanEdit() {
+    if (!ST || ST.phase !== 'harvest' || ST.over || ST.closed || ST.locked[PHONE_G - 1]) return false;
+    if (ST.timerEnd && ST.timerEnd - (Date.now() + offset) <= 0) return false;
+    return true;
   }
 
-  /* ---------- Start ---------- */
-  (function init() {
-    const g = parseInt(new URLSearchParams(location.search).get('g'), 10);
-    if (g >= 1 && g <= 5) {
-      phGroup = g;
-      $('hostView').style.display = 'none';
-      $('phoneView').style.display = 'block';
-      $('phTitle').textContent = 'Gruppe ' + g;
-      $('phTitle').style.color = COLORS[g - 1];
-      document.title = 'Gruppe ' + g + ' – Fischerei';
+  function phSet(v) { phVal = clampC(v); $('phInput').value = phVal; phRender(); }
+  function phAdj(d) { phSet(phVal + d); }
+
+  function phSendNow() {
+    if (!pending || !mq || !mq.connected || !ST) return;
+    pending.tries++;
+    mq.publish(T_UP, JSON.stringify({ type: 'catch', rid: ST.rid, round: ST.round, g: PHONE_G, v: pending.v }), { qos: 1 });
+    setTimeout(() => {
+      if (pending && ST && ST.submitted[PHONE_G - 1] !== pending.v && pending.tries < 3) phSendNow();
+      phRender();
+    }, 3000);
+  }
+  function phConfirm() {
+    if (!phCanEdit()) return;
+    pending = { v: phVal, tries: 0 };
+    phSendNow();
+    phRender();
+  }
+
+  function phTimer() {
+    const el = $('phTimer');
+    if (!ST) { el.textContent = '⏱️ –'; el.classList.remove('alarm'); return; }
+    if (ST.timerEnd) {
+      const left = Math.max(0, Math.ceil((ST.timerEnd - (Date.now() + offset)) / 1000));
+      el.textContent = '⏱️ ' + left + 's';
+      el.classList.toggle('alarm', left === 0);
+    } else if (ST.closed && ST.phase === 'harvest') {
+      el.textContent = '⏰ Zeit abgelaufen'; el.classList.add('alarm');
+    } else {
+      el.textContent = '⏱️ Timer läuft nicht'; el.classList.remove('alarm');
+    }
+  }
+
+  function phRender() {
+    const g = PHONE_G - 1;
+    $('phConn').textContent = connOk ? '🟢 live verbunden' : '🔴 keine Verbindung …';
+    if (!ST) {
+      $('phRound').textContent = '⏳ Warte auf den Host …';
+      $('phControls').style.display = 'none';
+      $('phMsg').innerHTML = '';
+      phTimer();
       return;
     }
+    $('phRound').textContent = ST.over ? '🏁 Spiel beendet' : 'Runde ' + ST.round + ' / 3';
+    const showCtl = ST.phase === 'harvest' && !ST.over;
+    $('phControls').style.display = showCtl ? 'block' : 'none';
+
+    const can = phCanEdit();
+    document.querySelectorAll('#phControls button, #phControls input').forEach(e => { e.disabled = !can; });
+    if (document.activeElement !== $('phInput')) $('phInput').value = phVal;
+
+    let msg = '';
+    if (showCtl) {
+      const s = ST.submitted[g];
+      if (ST.locked[g]) msg = '<span style="color:#fbbf24;">🔒 Vom Host gesperrt</span>';
+      else if (pending && s !== pending.v) {
+        msg = pending.tries >= 3
+          ? '<span style="color:#f87171;">⚠️ Nicht angekommen. Bitte nochmal senden.</span>'
+          : '<span style="color:#38bdf8;">⏳ Wird gesendet …</span>';
+      } else if (s !== null) {
+        msg = '<span style="color:#4ade80;">✅ Beim Host eingetragen: ' + s + ' 🐟</span>' +
+              (can ? '<br><span style="font-size:13px;color:#94a3b8;">Du kannst bis zum Zeitende noch ändern.</span>' : '');
+      } else if (!can) {
+        msg = '<span style="color:#f87171;">⏰ Eingabe geschlossen. Nichts gesendet.</span>';
+      } else {
+        msg = '<span style="color:#94a3b8;">Noch nichts gesendet</span>';
+      }
+      if (!can && s !== null && !ST.locked[g]) msg += '<br><span style="font-size:13px;color:#94a3b8;">Eingabe geschlossen.</span>';
+    } else if (ST.last) {
+      const l = ST.last;
+      msg = 'Runde ' + l.round + ' ausgewertet:<br>Gewünscht <b>' + l.asked[g] + '</b> · Gefangen <b style="color:#4ade80;">' + l.actual[g] + '</b> 🐟<br>' +
+            'Dein Korb gesamt: <b>' + ST.totals[g] + '</b> 🐟';
+      if (ST.pool !== null && l.start !== null) msg += '<br><span style="font-size:14px;color:#94a3b8;">Teich: ' + l.start + ' → ' + l.end + ' Fische</span>';
+      if (ST.collapsed) msg += '<br><span style="color:#f87171;">💀 Der Bestand ist zusammengebrochen!</span>';
+      else if (ST.over) msg += '<br><span style="color:#38bdf8;">Danke fürs Mitspielen!</span>';
+      else msg += '<br><span style="font-size:14px;color:#94a3b8;">⏳ Warte auf die nächste Runde …</span>';
+    }
+    $('phMsg').innerHTML = msg;
+    phTimer();
+  }
+
+  function phOnMessage(topic, m, pk) {
+    if (topic !== T_STATE || m.type !== 'state') return;
+    if (ST && m.rid === ST.rid && m.t < ST.t) return;
+    if (!pk.retain) offset = m.t - Date.now(); // nur bei Live-Nachrichten die Uhr abgleichen
+    const key = m.rid + '-' + m.round;
+    if (key !== phKey) { phKey = key; phVal = 0; pending = null; }
+    ST = m;
+    phRender();
+  }
+
+  /* ================= Start ================= */
+  (function init() {
+    if (IS_PHONE) {
+      $('hostView').style.display = 'none';
+      $('phoneView').style.display = 'block';
+      $('phTitle').textContent = 'Gruppe ' + PHONE_G;
+      $('phTitle').style.color = COLORS[PHONE_G - 1];
+      document.title = 'Gruppe ' + PHONE_G + ' – Fischerei';
+      if (!ROOM) { $('phRound').textContent = '❌ Kein Raum im Link. Bitte den QR-Code erneut scannen.'; $('phControls').style.display = 'none'; return; }
+      phRender();
+      mqttStart('p' + PHONE_G, phOnMessage,
+        () => {
+          mq.subscribe(T_STATE, { qos: 1 });
+          mq.publish(T_UP, JSON.stringify({ type: 'hello', g: PHONE_G }), { qos: 1 });
+        },
+        (ok, why) => { if (why === 'lib') $('phConn').textContent = '❌ Live-Bibliothek konnte nicht geladen werden'; else phRender(); });
+      setInterval(phTimer, 250);
+      return;
+    }
+
     startBanner();
     updateTimerUI();
     render();
     loop();
+    mqttStart('host', onUp,
+      () => { mq.subscribe(T_UP, { qos: 1 }); publishState(); },
+      (ok, why) => {
+        $('connBadge').textContent = why === 'lib' ? '❌ Live-Bibliothek fehlt' : (ok ? '📡 Live verbunden' : '📡 verbinde …');
+      });
   })();
 </script>
 </body>
