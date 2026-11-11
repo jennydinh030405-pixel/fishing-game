@@ -194,23 +194,29 @@
   const T_STATE = 'fischsim/' + ROOM + '/state';
   const T_UP = 'fischsim/' + ROOM + '/up';
 
-  let mq = null, connOk = false;
+  let mq = null, connOk = false, lastMsg = 0, brokerIdx = 0, mqttRestart = function () {};
+  const BPARAM = parseInt(params.get('b'), 10);
 
   function mqttStart(role, onMessage, onConnect, onStatus) {
     if (typeof mqtt === 'undefined') { onStatus(false, 'lib'); return; }
-    let idx = 0, tm = null;
+    // Handys nutzen genau den Broker, den der QR-Code vorgibt (damit Host und Handy sich treffen)
+    const fixed = IS_PHONE && BPARAM >= 0 && BPARAM < BROKERS.length;
+    let idx = fixed ? BPARAM : 0, tm = null;
     function open() {
       if (mq) { try { mq.end(true); } catch (e) {} }
+      brokerIdx = idx % BROKERS.length;
       let ok = false;
-      mq = mqtt.connect(BROKERS[idx % BROKERS.length], {
-        clientId: 'fs_' + role + '_' + randId(8), reconnectPeriod: 2000, connectTimeout: 6000, clean: true
+      const c = mqtt.connect(BROKERS[brokerIdx], {
+        clientId: 'fs_' + role + '_' + randId(8), reconnectPeriod: 2000, connectTimeout: 6000, keepalive: 10, clean: true
       });
-      mq.on('connect', () => { ok = true; clearTimeout(tm); connOk = true; onStatus(true); onConnect(); });
-      mq.on('close', () => { connOk = false; onStatus(false); });
-      mq.on('message', (t, p, pk) => { try { onMessage(t, JSON.parse(p.toString()), pk); } catch (e) {} });
+      mq = c;
+      c.on('connect', () => { if (c !== mq) return; ok = true; clearTimeout(tm); connOk = true; lastMsg = Date.now(); onStatus(true); onConnect(); });
+      c.on('close', () => { if (c !== mq) return; connOk = false; onStatus(false); });
+      c.on('message', (t, p, pk) => { if (c !== mq) return; lastMsg = Date.now(); try { onMessage(t, JSON.parse(p.toString()), pk); } catch (e) {} });
       clearTimeout(tm);
-      tm = setTimeout(() => { if (!ok) { idx++; open(); } }, 7000);
+      if (!fixed) tm = setTimeout(() => { if (!ok) { idx++; open(); } }, 7000);
     }
+    mqttRestart = open;   // komplette Neuverbindung inkl. neuem Abo
     open();
   }
 
@@ -570,7 +576,7 @@
       $('qrWarn').style.display = location.protocol === 'file:' ? 'block' : 'none';
       let h = '';
       for (let i = 1; i <= 5; i++) {
-        const url = base + '?room=' + ROOM + '&g=' + i;
+        const url = base + '?room=' + ROOM + '&g=' + i + '&b=' + brokerIdx;
         const src = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(url);
         h += '<div class="qr-item"><strong style="color:' + COLORS[i - 1] + '">Gruppe ' + i + '</strong><br><img src="' + src + '" alt="QR Gruppe ' + i + '"></div>';
       }
@@ -751,7 +757,8 @@
   let phLastCan = null;
   function phRender() {
     const g = PHONE_G - 1;
-    $('phConn').textContent = connOk ? '🟢 live verbunden' : '🔴 keine Verbindung …';
+    const stale = !!ST && Date.now() - lastMsg > 10000;
+    $('phConn').textContent = !connOk ? '🔴 keine Verbindung …' : (stale ? '🟡 Verbindung wird erneuert …' : '🟢 live verbunden');
     if (!ST) {
       $('phRound').textContent = '⏳ Warte auf den Host …';
       $('phControls').style.display = 'none';
@@ -835,6 +842,18 @@
         },
         (ok, why) => { if (why === 'lib') $('phConn').textContent = '❌ Live-Bibliothek konnte nicht geladen werden'; else phRender(); });
       setInterval(phTimer, 250);
+
+      // Wächter: Der Host sendet alle 4 s einen Herzschlag. Bleibt er aus, ist die Verbindung
+      // (z. B. nach Bildschirmsperre oder Hintergrund) tot -> komplett neu verbinden.
+      setInterval(() => {
+        if (ST && Date.now() - lastMsg > 12000) { lastMsg = Date.now(); mqttRestart(); }
+        phRender();
+      }, 2000);
+      const wake = () => { if (!document.hidden && Date.now() - lastMsg > 6000) mqttRestart(); };
+      document.addEventListener('visibilitychange', wake);
+      window.addEventListener('focus', wake);
+      window.addEventListener('pageshow', wake);
+      window.addEventListener('online', () => mqttRestart());
       return;
     }
 
@@ -842,6 +861,9 @@
     updateTimerUI();
     render();
     loop();
+    // Herzschlag: aktuellen Stand regelmäßig an alle Handys senden (hält auch Timer-Uhren synchron)
+    setInterval(() => { if (mq && mq.connected) publishState(); }, 4000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && !connOk) mqttRestart(); });
     mqttStart('host', onUp,
       () => { mq.subscribe(T_UP, { qos: 1 }); publishState(); },
       (ok, why) => {
