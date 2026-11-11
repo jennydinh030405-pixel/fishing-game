@@ -26,30 +26,34 @@
     /* Status Banner */
     .subbar { background: #0f172a; padding: 8px 20px; text-align: center; border-bottom: 1px solid #1e293b; font-size: 15px; font-weight: 700; color: #38bdf8; }
 
-    /* Main Arena */
-    .arena { position: relative; width: 960px; height: 610px; margin: 10px auto; }
-    .pond-wrap { position: absolute; top: 52%; left: 50%; transform: translate(-50%, -50%); width: 330px; height: 330px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 40px rgba(56, 189, 248, 0.25); transition: 0.4s; border: 8px solid #22c55e; background: radial-gradient(circle, #0284c7 0%, #0369a1 70%, #0f172a 100%); }
-    #pondCanvas { border-radius: 50%; width: 100%; height: 100%; }
-    .pond-overlay { position: absolute; pointer-events: none; text-align: center; text-shadow: 0 2px 8px rgba(0,0,0,0.85); }
-    .pond-count { font-size: 46px; font-weight: 900; line-height: 1; }
-    .pond-zone { font-size: 12px; font-weight: 700; margin-top: 5px; padding: 4px 10px; border-radius: 12px; background: rgba(0,0,0,0.65); display: inline-block; }
+    /* Main Arena with Full-Area Canvas for Fishing Lines */
+    .arena { position: relative; width: 980px; height: 640px; margin: 8px auto; user-select: none; }
+    #arenaCanvas { position: absolute; top: 0; left: 0; width: 980px; height: 640px; z-index: 5; pointer-events: none; }
+
+    /* Central Pond Ring & Counter Overlay */
+    .pond-ring { position: absolute; top: 330px; left: 490px; transform: translate(-50%, -50%); width: 340px; height: 340px; border-radius: 50%; border: 8px solid #22c55e; box-shadow: 0 0 45px rgba(56, 189, 248, 0.28); pointer-events: none; z-index: 4; transition: border-color 0.4s, box-shadow 0.4s; }
+    .pond-overlay { position: absolute; top: 330px; left: 490px; transform: translate(-50%, -50%); pointer-events: none; text-align: center; z-index: 6; text-shadow: 0 2px 10px rgba(0,0,0,0.95); }
+    .pond-count { font-size: 52px; font-weight: 900; line-height: 1; color: #ffffff; }
+    .pond-zone { font-size: 12px; font-weight: 700; margin-top: 6px; padding: 4px 12px; border-radius: 12px; background: rgba(15, 23, 42, 0.82); border: 1px solid rgba(255,255,255,0.15); display: inline-block; }
 
     /* 5 Team Cards around Pond */
-    .team-card { position: absolute; width: 225px; background: #1e293b; border: 2px solid #475569; border-radius: 14px; padding: 10px 12px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.45); }
-    .team-card.locked { border-color: #22c55e; box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); }
-    .pos-1 { top: 0px; left: 50%; transform: translateX(-50%); }
-    .pos-2 { top: 145px; right: 5px; }
-    .pos-3 { bottom: 10px; right: 80px; }
-    .pos-4 { bottom: 10px; left: 80px; }
-    .pos-5 { top: 145px; left: 5px; }
-    .team-title { font-weight: 800; font-size: 15px; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
-    .team-status { font-size: 18px; font-weight: 900; margin: 4px 0; color: #38bdf8; }
-    .host-manual { display: flex; justify-content: center; align-items: center; gap: 4px; margin: 6px 0; background: #0f172a; padding: 5px; border-radius: 8px; }
-    .btn-mini { width: 26px; height: 26px; background: #334155; color: white; font-size: 13px; border-radius: 6px; }
-    .team-total { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .team-card { position: absolute; width: 235px; background: rgba(30, 41, 59, 0.95); border: 2px solid #475569; border-radius: 14px; padding: 10px 12px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 10; transition: 0.25s; }
+    .team-card.locked { border-color: #22c55e; box-shadow: 0 0 16px rgba(34, 197, 94, 0.35); }
+    .pos-1 { top: 4px; left: 490px; transform: translateX(-50%); }
+    .pos-2 { top: 155px; right: 8px; }
+    .pos-3 { bottom: 12px; right: 75px; }
+    .pos-4 { bottom: 12px; left: 75px; }
+    .pos-5 { top: 155px; left: 8px; }
+    .team-title { font-weight: 800; font-size: 15px; margin-bottom: 3px; display: flex; justify-content: space-between; align-items: center; }
+    .team-status { font-size: 16px; font-weight: 900; margin: 3px 0; color: #38bdf8; }
+    .host-manual { display: flex; justify-content: center; align-items: center; gap: 4px; margin: 5px 0; background: #0f172a; padding: 4px; border-radius: 8px; }
+    .btn-mini { width: 25px; height: 25px; background: #334155; color: white; font-size: 12px; border-radius: 6px; }
+    .team-basket { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 5px 6px; margin-top: 5px; min-height: 44px; text-align: left; }
+    .basket-header { font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .basket-icons { font-size: 14px; line-height: 1.25; word-break: break-all; max-height: 36px; overflow-y: auto; }
 
     /* 3-Round & Regeneration Tracker */
-    .tracker-grid { max-width: 960px; margin: 0 auto 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 10px; }
+    .tracker-grid { max-width: 980px; margin: 0 auto 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 10px; }
     .round-box { background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 10px 14px; font-size: 13px; }
     .round-box.active { border-color: #38bdf8; background: #172554; }
     .round-box h4 { font-size: 14px; margin-bottom: 4px; color: #f8fafc; display: flex; justify-content: space-between; }
@@ -81,21 +85,12 @@
       </div>
 
       <div class="controls">
-        <!-- Fish Pool Capacity Setter -->
         <label style="color:#94a3b8;">Start Fish:</label>
-        <input type="number" id="initFishInput" value="50" min="10" max="500" style="width:60px; padding:5px;">
+        <input type="number" id="initFishInput" value="50" min="5" max="500" style="width:60px; padding:5px;">
         <button class="btn-ghost" onclick="setCustomFish()">Set Pool</button>
-
-        <!-- Secret vs Shown Mode -->
         <button id="secretBtn" class="btn-ghost" onclick="toggleSecretMode()">🔒 Mode: Secret (??)</button>
-
-        <!-- 60s Timer Button -->
         <button class="btn-amber" onclick="start60sTimer()">⏱️ Start 60s Timer</button>
-
-        <!-- QR Codes -->
         <button class="btn-primary" onclick="toggleQR(true)">📱 5 QR Codes</button>
-
-        <!-- Execute / Next Round -->
         <button id="actionBtn" class="btn-green" onclick="runRoundAction()">🎣 Execute Harvest</button>
         <button class="btn-danger" onclick="resetGame()">↺ Reset</button>
       </div>
@@ -104,13 +99,14 @@
     <div class="subbar" id="bannerMsg">Round 1: Click "Start 60s Timer" or let groups enter their catch!</div>
 
     <div class="arena">
-      <div class="pond-wrap" id="pondRing">
-        <canvas id="pondCanvas" width="330" height="330"></canvas>
-        <div class="pond-overlay">
-          <div class="pond-count" id="fishCountTxt">50</div>
-          <div style="font-size:12px; font-weight:700;">FISH IN POOL (MAX <span id="maxFishTxt">50</span>)</div>
-          <div class="pond-zone" id="zoneTxt">Round 1 Regen: +50% Births</div>
-        </div>
+      <!-- Full-Arena Canvas draws the Pond, Swimming Fish, Fishing Lines, and Flying Caught Fish -->
+      <canvas id="arenaCanvas" width="980" height="640"></canvas>
+      <div class="pond-ring" id="pondRing"></div>
+
+      <div class="pond-overlay">
+        <div class="pond-count" id="fishCountTxt">50</div>
+        <div style="font-size:12px; font-weight:800; letter-spacing:0.5px;">FISH IN POOL (MAX <span id="maxFishTxt">50</span>)</div>
+        <div class="pond-zone" id="zoneTxt">🟢 Round 1 Growth: +50% Births</div>
       </div>
 
       <div class="team-card pos-1" id="card-1"></div>
@@ -120,11 +116,11 @@
       <div class="team-card pos-5" id="card-5"></div>
     </div>
 
-    <!-- Clear 3-Round Sustainability & Declining Growth Explanation -->
+    <!-- 3-Round Sustainability & Declining Growth Explanation -->
     <div class="tracker-grid">
       <div class="round-box" id="rbox-1">
         <h4><span>Round 1: High Growth</span> <span style="color:#4ade80;">+50% Birth Rate</span></h4>
-        <p style="color:#94a3b8;">Healthy ecosystem: Surviving fish after Round 1 reproduce by <b>+50%</b> (unless <10 fish left = 0%).</p>
+        <p style="color:#94a3b8;">Healthy ecosystem: Surviving fish after Round 1 reproduce by <b>+50%</b> (unless &lt;10 fish left = 0%).</p>
       </div>
       <div class="round-box" id="rbox-2">
         <h4><span>Round 2: Slower Recovery</span> <span style="color:#facc15;">+25% Birth Rate</span></h4>
@@ -132,7 +128,7 @@
       </div>
       <div class="round-box" id="rbox-3">
         <h4><span>Round 3: Final Harvest</span> <span style="color:#f87171;">0% (Game Ends)</span></h4>
-        <p style="color:#94a3b8;">⚠️ <b>Golden Rule:</b> If total catch takes the pool to <b>0 fish</b> in ANY round, the pond dies & ALL 5 groups lose!</p>
+        <p style="color:#94a3b8;">⚠️ <b>Golden Rule:</b> If total catch takes the pool to <b>0 fish</b> in ANY round, all fish die &amp; ALL 5 groups lose!</p>
       </div>
     </div>
   </div>
@@ -147,7 +143,8 @@
     <p id="pRegenNote" style="font-size:12px; color:#facc15; margin-top:4px;">After Round 1: Surviving fish grow by +50%</p>
 
     <div style="margin:12px 0; padding:10px; background:#0f172a; border-radius:10px; font-size:14px;">
-      Your Total Fish Caught: <b id="pTotal" style="color:#22c55e;">0 fish</b>
+      Your Basket So Far: <b id="pTotal" style="color:#22c55e;">0 fish</b>
+      <div id="pBasketIcons" style="font-size:16px; margin-top:4px;"></div>
     </div>
 
     <p style="font-size:13px; color:#cbd5e1;">How many fish will your group catch this round? (No limit!)</p>
@@ -179,11 +176,27 @@
   const params = new URLSearchParams(window.location.search);
   const myTeam = parseInt(params.get("team")) || 0;
 
+  // Pond Geometry & Team Anchor Coordinates for Fishing Lines
+  const POND_X = 490, POND_Y = 330, POND_R = 166;
+  const TEAM_COLORS = { 1: "#38bdf8", 2: "#fbbf24", 3: "#4ade80", 4: "#f472b6", 5: "#a78bfa" };
+  const TEAM_ANCHORS = {
+    1: { x: 490, y: 125 },
+    2: { x: 740, y: 235 },
+    3: { x: 675, y: 515 },
+    4: { x: 305, y: 515 },
+    5: { x: 240, y: 235 }
+  };
+
   let state = null;
   let localOrder = 5;
   let lastRoundSeen = 1;
+  let peekTeam = {};
+  let isAnimating = false;
+
+  // Visual Pool Entities
   let fishes = [];
-  let peekTeam = {}; // Host can peek/edit an individual card even in secret mode
+  let flyingCatches = []; // Fish being reeled into team baskets with fishing lines
+  let spawnEffects = [];  // Baby fish green heart pop effects
 
   const defaultState = (startFish = 50) => ({
     round: 1,
@@ -194,387 +207,17 @@
     phase: "input", // input | revealed | gameover
     msg: "Round 1: Click 'Start 60s Timer' or let the 5 groups enter their catch!",
     teams: {
-      1: { name: "Group 1", order: 0, locked: false, total: 0 },
-      2: { name: "Group 2", order: 0, locked: false, total: 0 },
-      3: { name: "Group 3", order: 0, locked: false, total: 0 },
-      4: { name: "Group 4", order: 0, locked: false, total: 0 },
-      5: { name: "Group 5", order: 0, locked: false, total: 0 }
+      1: { name: "Group 1", order: 0, locked: false, total: 0, lastCatch: 0 },
+      2: { name: "Group 2", order: 0, locked: false, total: 0, lastCatch: 0 },
+      3: { name: "Group 3", order: 0, locked: false, total: 0, lastCatch: 0 },
+      4: { name: "Group 4", order: 0, locked: false, total: 0, lastCatch: 0 },
+      5: { name: "Group 5", order: 0, locked: false, total: 0, lastCatch: 0 }
     }
   });
 
-  async function syncRead() {
-    try {
-      const res = await fetch(DB_URL);
-      const data = await res.json();
-      if (!data || !data.teams) {
-        if (!myTeam) await resetGame();
-        return;
-      }
-      state = data;
-      myTeam ? renderPhone() : renderHost();
-    } catch (e) { console.error(e); }
-  }
-
-  async function resetGame() {
-    const customVal = parseInt(document.getElementById("initFishInput")?.value) || 50;
-    const fresh = defaultState(customVal);
-    await fetch(DB_URL, { method: "PUT", body: JSON.stringify(fresh) });
-    syncRead();
-  }
-
-  async function setCustomFish() {
-    const val = Math.max(5, parseInt(document.getElementById("initFishInput").value) || 50);
-    await fetch(DB_URL, {
-      method: "PATCH",
-      body: JSON.stringify({ fish: val, maxFish: val, msg: `Pool updated to ${val} fish!` })
-    });
-    syncRead();
-  }
-
-  async function toggleSecretMode() {
-    if (!state) return;
-    await fetch(DB_URL, {
-      method: "PATCH",
-      body: JSON.stringify({ secretMode: !state.secretMode })
-    });
-    syncRead();
-  }
-
-  async function start60sTimer() {
-    const end = Date.now() + 60000;
-    await fetch(DB_URL, {
-      method: "PATCH",
-      body: JSON.stringify({
-        timerEnd: end,
-        msg: `⏱️ 60 seconds started for Round ${state.round}! Enter your catch now!`
-      })
-    });
-    syncRead();
-  }
-
-  // Update 60s countdown display every 500ms
-  setInterval(() => {
-    if (!state) return;
-    let rem = state.timerEnd ? Math.max(0, Math.ceil((state.timerEnd - Date.now()) / 1000)) : null;
-    const txt = rem !== null && state.timerEnd > 0 ? `⏱️ ${rem}s` : "⏱️ --s";
-    const hTimer = document.getElementById("hostTimer");
-    const pTimer = document.getElementById("pTimer");
-    if (hTimer) {
-      hTimer.textContent = txt;
-      hTimer.style.background = (rem !== null && rem <= 10 && rem > 0) ? "#dc2626" : "#7c2d12";
-    }
-    if (pTimer) pTimer.textContent = txt;
-
-    // Auto-lock all teams on Host when timer hits 0
-    if (!myTeam && state.phase === "input" && state.timerEnd > 0 && rem === 0) {
-      state.timerEnd = 0;
-      for (let i = 1; i <= 5; i++) state.teams[i].locked = true;
-      state.msg = "⏰ Time's up! All 5 groups are locked in. Click 'Execute Harvest'!";
-      fetch(DB_URL, { method: "PUT", body: JSON.stringify(state) });
-    }
-  }, 500);
-
-  // PHONE CONTROLS (UNLIMITED INPUT)
-  function changePhoneOrder(delta) {
-    if (state && state.teams[myTeam]?.locked) return;
-    localOrder = Math.max(0, localOrder + delta);
-    document.getElementById("pOrderInput").value = localOrder;
-  }
-
-  function manualPhoneInput(val) {
-    if (state && state.teams[myTeam]?.locked) return;
-    localOrder = Math.max(0, parseInt(val) || 0);
-  }
-
-  async function submitPhoneOrder() {
-    const inpVal = Math.max(0, parseInt(document.getElementById("pOrderInput").value) || 0);
-    localOrder = inpVal;
-    await fetch(`${DB_BASE}/teams/${myTeam}.json`, {
-      method: "PATCH",
-      body: JSON.stringify({ order: localOrder, locked: true })
-    });
-    syncRead();
-  }
-
-  function renderPhone() {
-    if (state.round !== lastRoundSeen) {
-      lastRoundSeen = state.round;
-      localOrder = 0;
-      document.getElementById("pOrderInput").value = 0;
-    }
-    const t = state.teams[myTeam];
-    document.getElementById("pTeamTitle").textContent = t.name;
-    document.getElementById("pRound").textContent = state.round;
-    document.getElementById("pFish").textContent = state.fish;
-    document.getElementById("pTotal").textContent = t.total + " fish";
-
-    const rNote = document.getElementById("pRegenNote");
-    if (state.round === 1) rNote.textContent = "After Round 1: Surviving fish reproduce by +50%";
-    else if (state.round === 2) rNote.textContent = "After Round 2: Recovery slows down to +25%!";
-    else rNote.textContent = "Round 3: Final round! Don't let the pool hit 0!";
-
-    const btn = document.getElementById("pLockBtn");
-    const inp = document.getElementById("pOrderInput");
-    const st = document.getElementById("pStatus");
-
-    if (state.phase !== "input") {
-      btn.disabled = true;
-      inp.disabled = true;
-      st.textContent = state.msg;
-    } else if (t.locked) {
-      inp.value = t.order;
-      inp.disabled = true;
-      btn.disabled = true;
-      btn.textContent = `✅ Locked In (${t.order} fish)`;
-      st.textContent = "Locked! Waiting for host to execute the harvest...";
-    } else {
-      inp.disabled = false;
-      btn.disabled = false;
-      btn.textContent = "🔒 Lock In Catch";
-      st.textContent = "";
-    }
-  }
-
-  // HOST MANUAL OVERRIDE FUNCTIONS (When QR isn't used)
-  async function hostAdjustTeam(id, delta) {
-    const cur = Number(state.teams[id].order || 0);
-    const next = Math.max(0, cur + delta);
-    await fetch(`${DB_BASE}/teams/${id}.json`, {
-      method: "PATCH",
-      body: JSON.stringify({ order: next })
-    });
-    syncRead();
-  }
-
-  async function hostTypeTeam(id, val) {
-    const next = Math.max(0, parseInt(val) || 0);
-    await fetch(`${DB_BASE}/teams/${id}.json`, {
-      method: "PATCH",
-      body: JSON.stringify({ order: next })
-    });
-    syncRead();
-  }
-
-  async function hostToggleLock(id) {
-    const cur = !!state.teams[id].locked;
-    await fetch(`${DB_BASE}/teams/${id}.json`, {
-      method: "PATCH",
-      body: JSON.stringify({ locked: !cur })
-    });
-    syncRead();
-  }
-
-  function togglePeek(id) {
-    peekTeam[id] = !peekTeam[id];
-    renderHost();
-  }
-
-  // HOST RENDER
-  function renderHost() {
-    document.getElementById("roundNum").textContent = state.round;
-    document.getElementById("bannerMsg").textContent = state.msg;
-    document.getElementById("fishCountTxt").textContent = state.fish;
-    document.getElementById("maxFishTxt").textContent = state.maxFish || 50;
-
-    const secBtn = document.getElementById("secretBtn");
-    secBtn.textContent = state.secretMode ? "🔒 Mode: Secret (??)" : "👁️ Mode: Shown (Live)";
-    secBtn.style.background = state.secretMode ? "#334155" : "#0284c7";
-
-    // Highlight active round box
-    for (let r = 1; r <= 3; r++) {
-      document.getElementById("rbox-" + r).className = `round-box ${state.round === r ? 'active' : ''}`;
-    }
-
-    const ring = document.getElementById("pondRing");
-    const zTxt = document.getElementById("zoneTxt");
-    if (state.fish === 0) {
-      ring.style.borderColor = "#dc2626";
-      zTxt.textContent = "☠️ ECOSYSTEM COLLAPSED (0 FISH)";
-    } else if (state.fish < 10) {
-      ring.style.borderColor = "#f97316";
-      zTxt.textContent = "🔴 Tipping Point (<10 fish = 0% Births!)";
-    } else if (state.round === 1) {
-      ring.style.borderColor = "#22c55e";
-      zTxt.textContent = "🟢 Round 1 Growth: +50% Births";
-    } else if (state.round === 2) {
-      ring.style.borderColor = "#eab308";
-      zTxt.textContent = "🟡 Round 2 Growth: +25% Births";
-    } else {
-      ring.style.borderColor = "#38bdf8";
-      zTxt.textContent = "🏁 Round 3: Final Harvest!";
-    }
-
-    for (let i = 1; i <= 5; i++) {
-      const t = state.teams[i];
-      const card = document.getElementById("card-" + i);
-      card.className = `team-card pos-${i} ${t.locked ? 'locked' : ''}`;
-
-      const showNumber = !state.secretMode || state.phase !== "input" || peekTeam[i];
-      let statusHTML = showNumber ? `🎣 Catch: ${t.order}` : (t.locked ? "🔒 Ready (??)" : "⏳ Thinking (??)");
-
-      card.innerHTML = `
-        <div class="team-title">
-          <span>${t.name}</span>
-          <button class="btn-ghost" style="padding:2px 6px; font-size:11px;" onclick="togglePeek(${i})">
-            ${peekTeam[i] ? 'Hide' : 'Edit/Peek'}
-          </button>
-        </div>
-        <div class="team-status">${statusHTML}</div>
-        <div class="host-manual">
-          <button class="btn-mini" onclick="hostAdjustTeam(${i}, -5)">-5</button>
-          <button class="btn-mini" onclick="hostAdjustTeam(${i}, -1)">-</button>
-          ${showNumber
-            ? `<input type="number" value="${t.order}" min="0" style="width:52px; height:26px;" onchange="hostTypeTeam(${i}, this.value)">`
-            : `<span style="width:52px; font-weight:800; color:#94a3b8;">??</span>`
-          }
-          <button class="btn-mini" onclick="hostAdjustTeam(${i}, 1)">+</button>
-          <button class="btn-mini" onclick="hostAdjustTeam(${i}, 5)">+5</button>
-          <button class="btn-mini" style="width:auto; padding:0 6px; background:${t.locked ? '#16a34a' : '#475569'}" onclick="hostToggleLock(${i})">
-            ${t.locked ? '🔒' : '🔓'}
-          </button>
-        </div>
-        <div class="team-total">Total Basket: <b style="color:#4ade80; font-size:14px;">${t.total}</b> 🐟</div>
-      `;
-    }
-
-    const btn = document.getElementById("actionBtn");
-    if (state.phase === "input") {
-      btn.textContent = "🎣 Execute Round " + state.round + " Harvest";
-      btn.disabled = false;
-    } else if (state.phase === "revealed") {
-      if (state.round === 1) btn.textContent = "🌱 Breed (+50%) & Start Round 2";
-      else if (state.round === 2) btn.textContent = "🌱 Breed (+25%) & Start Round 3";
-      else btn.textContent = "🏆 Show Final Sustainability Winner";
-      btn.disabled = false;
-    } else {
-      btn.textContent = "Game Over";
-      btn.disabled = true;
-    }
-  }
-
-  // EXECUTE ROUND & DECLINING REGENERATION (R1: +50%, R2: +25%, R3: End)
-  async function runRoundAction() {
-    if (!state) return;
-    state.timerEnd = 0;
-
-    if (state.phase === "input") {
-      let totalReq = 0;
-      for (let i = 1; i <= 5; i++) totalReq += Number(state.teams[i].order || 0);
-
-      if (totalReq >= state.fish) {
-        state.fish = 0;
-        state.phase = "gameover";
-        state.msg = `☠️ ECOSYSTEM COLLAPSE! Groups demanded ${totalReq} fish from ${state.fish}. Pool hit 0 — ALL 5 GROUPS LOSE!`;
-      } else {
-        state.fish -= totalReq;
-        for (let i = 1; i <= 5; i++) {
-          state.teams[i].total += Number(state.teams[i].order || 0);
-        }
-        state.phase = "revealed";
-        state.msg = `Round ${state.round} Harvest: ${totalReq} fish caught! ${state.fish} fish left in the pool.`;
-      }
-    } else if (state.phase === "revealed") {
-      if (state.round < 3) {
-        // Round 1 -> Round 2 is +50%; Round 2 -> Round 3 is +25% (0% if critically overfished below 10)
-        let rate = 0;
-        if (state.fish >= 10) {
-          rate = (state.round === 1) ? 0.50 : 0.25;
-        }
-        let babies = Math.floor(state.fish * rate);
-        let cap = state.maxFish || 50;
-        let nextFish = Math.min(cap, state.fish + babies);
-
-        state.msg = `🌱 After Round ${state.round} (+${rate * 100}% growth): ${state.fish} survivors + ${babies} new baby fish = ${nextFish} fish for Round ${state.round + 1}!`;
-        state.fish = nextFish;
-        state.round += 1;
-        state.phase = "input";
-        for (let i = 1; i <= 5; i++) {
-          state.teams[i].locked = false;
-          state.teams[i].order = 0;
-        }
-      } else {
-        state.phase = "gameover";
-        let best = 1;
-        for (let i = 2; i <= 5; i++) {
-          if (state.teams[i].total > state.teams[best].total) best = i;
-        }
-        state.msg = `🏆 SUSTAINABLE VICTORY! The pond survived all 3 rounds (${state.fish} fish left)! Most fish caught: ${state.teams[best].name} (${state.teams[best].total} fish)!`;
-      }
-    }
-    await fetch(DB_URL, { method: "PUT", body: JSON.stringify(state) });
-    syncRead();
-  }
-
-  function toggleQR(show) {
-    const modal = document.getElementById("qrModal");
-    modal.className = show ? "modal active" : "modal";
-    if (show) {
-      const base = window.location.origin + window.location.pathname;
-      const grid = document.getElementById("qrGrid");
-      grid.innerHTML = "";
-      for (let i = 1; i <= 5; i++) {
-        const url = `${base}?team=${i}`;
-        const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}`;
-        grid.innerHTML += `
-          <div class="qr-item">
-            <b>Group ${i}</b><br>
-            <img src="${qrImg}" alt="QR ${i}">
-            <div style="font-size:11px;"><a href="${url}" target="_blank" style="color:#38bdf8;">Open Phone Link</a></div>
-          </div>`;
-      }
-    }
-  }
-
-  function initCanvas() {
-    const cvs = document.getElementById("pondCanvas");
-    const ctx = cvs.getContext("2d");
-    for (let i = 0; i < 200; i++) {
-      fishes.push({
-        x: 165 + (Math.random() - 0.5) * 180,
-        y: 165 + (Math.random() - 0.5) * 180,
-        ang: Math.random() * Math.PI * 2,
-        spd: 0.6 + Math.random() * 0.7,
-        color: ["#38bdf8", "#fbbf24", "#4ade80", "#f472b6", "#a78bfa"][i % 5]
-      });
-    }
-    function loop() {
-      ctx.clearRect(0, 0, 330, 330);
-      const count = Math.min(200, state ? state.fish : 50);
-      for (let i = 0; i < count; i++) {
-        const f = fishes[i];
-        f.x += Math.cos(f.ang) * f.spd;
-        f.y += Math.sin(f.ang) * f.spd;
-        const dx = f.x - 165, dy = f.y - 165;
-        if (Math.hypot(dx, dy) > 130) f.ang = Math.atan2(-dy, -dx) + (Math.random() - 0.5) * 0.5;
-
-        ctx.save();
-        ctx.translate(f.x, f.y);
-        ctx.rotate(f.ang);
-        ctx.fillStyle = f.color;
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 7.5, 4, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(-5, 0);
-        ctx.lineTo(-11, -4.5);
-        ctx.lineTo(-11, 4.5);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-      }
-      requestAnimationFrame(loop);
-    }
-    loop();
-  }
-
-  if (myTeam >= 1 && myTeam <= 5) {
-    document.getElementById("phoneView").style.display = "block";
-  } else {
-    document.getElementById("hostView").style.display = "block";
-    initCanvas();
-  }
-  syncRead();
-  setInterval(syncRead, 1200);
-</script>
-</body>
-</html>
+  function createSwimmer(isBaby = false) {
+    const anglePos = Math.random() * Math.PI * 2;
+    const dist = Math.random() * (POND_R - 28);
+    return {
+      x: POND_X + Math.cos(anglePos) * dist,
+      y: POND_
