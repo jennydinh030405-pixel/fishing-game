@@ -10,7 +10,7 @@
     button { cursor: pointer; border: none; border-radius: 8px; font-weight: 700; transition: 0.15s; }
     button:hover { opacity: 0.92; transform: translateY(-1px); }
     button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-    input[type="number"] { background: #0f172a; color: #38bdf8; border: 1px solid #475569; border-radius: 6px; text-align: center; font-weight: 800; }
+    input[type="number"], input[type="password"] { background: #0f172a; color: #38bdf8; border: 1px solid #475569; border-radius: 6px; text-align: center; font-weight: 800; }
     input:disabled { opacity: 0.4; }
 
     .topbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #1e293b; border-bottom: 2px solid #334155; flex-wrap: wrap; gap: 10px; }
@@ -299,6 +299,7 @@
     $('zoneTxt').textContent = zone;
 
     $('secretBtn').textContent = secret ? '🔒 Modus: Geheim (??)' : '🔓 Modus: Offen';
+    renderInit();
     renderCards();
     renderTracker();
     renderAction();
@@ -327,24 +328,28 @@
       card.classList.toggle('sent', ed && S.submitted[i] !== null && !S.locked[i]);
       card.classList.toggle('fishing', !!anim && anim.cur === i);
       const dis = ed ? '' : 'disabled';
+      const hide = secret && !S.over;                 // Geheimmodus: eingetragene Zahlen verbergen
+      const disAdj = (ed && !hide) ? '' : 'disabled'; // +/- würden blind ändern, daher im Geheimmodus aus
       const tot = S.totals[i] + (anim ? anim.tot[i] : 0);
       const icons = '🐟'.repeat(Math.min(tot, 120)) + (tot > 120 ? '…' : '');
       let st;
       if (anim) st = anim.done[i] ? '🎣 gefangen: ' + anim.res.actual[i] : (anim.cur === i ? '🎣 zieht Fische …' : '⏳ wartet …');
       else if (S.phase === 'done' || S.over) st = '🎣 gefangen: ' + (S.hist.length ? S.hist[S.hist.length - 1].actual[i] : 0);
-      else if (S.locked[i]) st = '✅ fixiert: ' + S.catches[i];
-      else if (S.submitted[i] !== null) st = '📱 gesendet: ' + S.submitted[i];
+      else if (S.locked[i]) st = hide ? '✅ fixiert' : '✅ fixiert: ' + S.catches[i];
+      else if (S.submitted[i] !== null) st = hide ? '📱 gesendet ✓' : '📱 gesendet: ' + S.submitted[i];
       else if (S.seen[i]) st = '📱 verbunden';
       else st = '⏳ noch nicht verbunden';
       card.innerHTML =
         '<div class="team-title"><span style="color:' + COLORS[i] + '">Gruppe ' + (i + 1) + '</span><span>' + (S.locked[i] ? '🔒' : '') + '</span></div>' +
         '<div class="team-status">' + st + '</div>' +
         '<div class="host-manual">' +
-          '<button class="btn-mini" ' + dis + ' onclick="adj(' + i + ',-5)">−5</button>' +
-          '<button class="btn-mini" ' + dis + ' onclick="adj(' + i + ',-1)">−1</button>' +
-          '<input type="number" min="0" max="500" value="' + S.catches[i] + '" ' + dis + ' style="width:54px;height:26px;font-size:15px;" onchange="setC(' + i + ',this.value)">' +
-          '<button class="btn-mini" ' + dis + ' onclick="adj(' + i + ',1)">+1</button>' +
-          '<button class="btn-mini" ' + dis + ' onclick="adj(' + i + ',5)">+5</button>' +
+          '<button class="btn-mini" ' + disAdj + ' onclick="adj(' + i + ',-5)">−5</button>' +
+          '<button class="btn-mini" ' + disAdj + ' onclick="adj(' + i + ',-1)">−1</button>' +
+          (hide
+            ? '<input type="password" inputmode="numeric" autocomplete="off" value="" placeholder="' + ((S.catches[i] > 0 || S.submitted[i] !== null) ? '✔' : '–') + '" ' + dis + ' style="width:54px;height:26px;font-size:15px;" onchange="setC(' + i + ',this.value)">'
+            : '<input type="number" min="0" max="500" value="' + S.catches[i] + '" ' + dis + ' style="width:54px;height:26px;font-size:15px;" onchange="setC(' + i + ',this.value)">') +
+          '<button class="btn-mini" ' + disAdj + ' onclick="adj(' + i + ',1)">+1</button>' +
+          '<button class="btn-mini" ' + disAdj + ' onclick="adj(' + i + ',5)">+5</button>' +
         '</div>' +
         '<button class="btn-ghost" ' + dis + ' onclick="toggleLock(' + i + ')">' + (S.locked[i] ? 'Entsperren' : 'Fixieren') + '</button>' +
         '<div class="team-basket"><div class="basket-header"><span>🧺 Korb</span><strong style="color:#e2e8f0;">' + tot + ' gesamt</strong></div>' +
@@ -419,12 +424,25 @@
     if (!confirm('GANZES Spiel zurücksetzen? Alle Runden, Fänge und Körbe gehen verloren. (Nur die aktuelle Runde zurücksetzen: Button "Runde zurücksetzen".)')) return;
     newGame(S.init);
   }
+  // Start-Fische-Feld: im Geheimmodus verborgen (leer, nur "••"), sonst normal sichtbar
+  function renderInit() {
+    const el = $('initFishInput');
+    const hide = secret && !S.over;
+    if (hide) {
+      if (el.type !== 'password') { el.type = 'password'; el.value = ''; }
+      el.placeholder = '••';
+    } else if (el.type !== 'number') {
+      el.type = 'number'; el.placeholder = ''; el.value = S.init;
+    }
+  }
   function setPool() {
-    let v = parseInt($('initFishInput').value, 10);
+    const el = $('initFishInput');
+    const raw = el.value;
+    let v = raw === '' ? S.init : parseInt(raw, 10);   // leer (Geheimmodus) = Bestand unverändert
     if (isNaN(v)) v = 50;
     v = Math.max(5, Math.min(500, v));
-    $('initFishInput').value = v;
     if ((S.hist.length > 0 || S.phase !== 'ready') && !confirm('Den Start-Bestand zu ändern setzt das GANZE Spiel zurück. Fortfahren?')) return;
+    el.value = (secret && !S.over) ? '' : v;
     newGame(v);
   }
   function newGame(v) {
@@ -540,7 +558,7 @@
     S.phase = 'done';
 
     let msg = 'Runde ' + S.round + ' beendet: ' + res.caught + ' Fische gefangen';
-    if (res.demand > res.start) msg += ' (Wunsch ' + res.demand + ' > Bestand ' + res.start + ', anteilig gekürzt)';
+    if (res.demand > res.start) msg += ' (Wunsch ' + res.demand + (secret ? '' : ' > Bestand ' + res.start) + ', anteilig gekürzt)';
     msg += secret ? '.' : ', ' + res.born + ' neue geboren.';
 
     if (S.pool === 0) {
