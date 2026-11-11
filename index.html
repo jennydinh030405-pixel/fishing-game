@@ -12,7 +12,6 @@
     button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
     input[type="number"] { background: #0f172a; color: #38bdf8; border: 1px solid #475569; border-radius: 6px; text-align: center; font-weight: 800; }
 
-    /* Top Control Bar */
     .topbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #1e293b; border-bottom: 2px solid #334155; flex-wrap: wrap; gap: 10px; }
     .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
     .badge { padding: 6px 12px; border-radius: 99px; font-weight: 700; background: #0f172a; border: 1px solid #334155; }
@@ -23,21 +22,17 @@
     .btn-danger { background: #dc2626; color: white; padding: 8px 12px; font-size: 13px; }
     .btn-ghost { background: #334155; color: #e2e8f0; padding: 6px 10px; font-size: 12px; }
 
-    /* Status Banner */
     .subbar { background: #0f172a; padding: 8px 20px; text-align: center; border-bottom: 1px solid #1e293b; font-size: 15px; font-weight: 700; color: #38bdf8; }
 
-    /* Main Arena with Full-Area Canvas for Fishing Lines */
     .arena { position: relative; width: 980px; height: 640px; margin: 8px auto; user-select: none; }
     #arenaCanvas { position: absolute; top: 0; left: 0; width: 980px; height: 640px; z-index: 5; pointer-events: none; }
 
-    /* Central Pond Ring & Counter Overlay */
-    .pond-ring { position: absolute; top: 330px; left: 490px; transform: translate(-50%, -50%); width: 340px; height: 340px; border-radius: 50%; border: 8px solid #22c55e; box-shadow: 0 0 45px rgba(56, 189, 248, 0.28); pointer-events: none; z-index: 4; transition: border-color 0.4s, box-shadow 0.4s; }
+    .pond-ring { position: absolute; top: 330px; left: 490px; transform: translate(-50%, -50%); width: 340px; height: 340px; border-radius: 50%; border: 8px solid #22c55e; box-shadow: 0 0 45px rgba(56, 189, 248, 0.28); pointer-events: none; z-index: 4; transition: 0.4s; }
     .pond-overlay { position: absolute; top: 330px; left: 490px; transform: translate(-50%, -50%); pointer-events: none; text-align: center; z-index: 6; text-shadow: 0 2px 10px rgba(0,0,0,0.95); }
     .pond-count { font-size: 52px; font-weight: 900; line-height: 1; color: #ffffff; }
     .pond-zone { font-size: 12px; font-weight: 700; margin-top: 6px; padding: 4px 12px; border-radius: 12px; background: rgba(15, 23, 42, 0.82); border: 1px solid rgba(255,255,255,0.15); display: inline-block; }
 
-    /* 5 Team Cards around Pond */
-    .team-card { position: absolute; width: 235px; background: rgba(30, 41, 59, 0.95); border: 2px solid #475569; border-radius: 14px; padding: 10px 12px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 10; transition: 0.25s; }
+    .team-card { position: absolute; width: 235px; background: rgba(30, 41, 59, 0.95); border: 2px solid #475569; border-radius: 14px; padding: 10px 12px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 10; }
     .team-card.locked { border-color: #22c55e; box-shadow: 0 0 16px rgba(34, 197, 94, 0.35); }
     .pos-1 { top: 4px; left: 490px; transform: translateX(-50%); }
     .pos-2 { top: 155px; right: 8px; }
@@ -52,13 +47,11 @@
     .basket-header { font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; margin-bottom: 2px; }
     .basket-icons { font-size: 14px; line-height: 1.25; word-break: break-all; max-height: 36px; overflow-y: auto; }
 
-    /* 3-Round & Regeneration Tracker */
     .tracker-grid { max-width: 980px; margin: 0 auto 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 10px; }
     .round-box { background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 10px 14px; font-size: 13px; }
     .round-box.active { border-color: #38bdf8; background: #172554; }
     .round-box h4 { font-size: 14px; margin-bottom: 4px; color: #f8fafc; display: flex; justify-content: space-between; }
 
-    /* Modals */
     .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.82); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
     .modal.active { display: flex; }
     .modal-box { background: #1e293b; border: 2px solid #475569; border-radius: 16px; padding: 24px; max-width: 850px; width: 100%; text-align: center; }
@@ -66,7 +59,6 @@
     .qr-item { background: #0f172a; padding: 12px 8px; border-radius: 10px; border: 1px solid #334155; }
     .qr-item img { width: 120px; height: 120px; border-radius: 8px; background: white; padding: 6px; margin: 8px 0; }
 
-    /* Mobile Phone View */
     .phone-view { max-width: 420px; margin: 25px auto; background: #1e293b; border-radius: 20px; padding: 24px 18px; text-align: center; border: 2px solid #38bdf8; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
     .ctrl-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 18px 0; }
     .btn-step { width: 48px; height: 48px; font-size: 18px; background: #334155; color: white; border-radius: 12px; }
@@ -75,8 +67,8 @@
 </head>
 <body>
 
-  <!-- PROJECTOR HOST VIEW -->
-  <div id="hostView" style="display:none;">
+  <!-- PROJECTOR HOST VIEW (Sichtbar beim Laden!) -->
+  <div id="hostView">
     <div class="topbar">
       <div style="display:flex; align-items:center; gap:12px;">
         <strong style="font-size:17px;">🐟 Commons Fishing Simulator</strong>
@@ -99,125 +91,22 @@
     <div class="subbar" id="bannerMsg">Round 1: Click "Start 60s Timer" or let groups enter their catch!</div>
 
     <div class="arena">
-      <!-- Full-Arena Canvas draws the Pond, Swimming Fish, Fishing Lines, and Flying Caught Fish -->
       <canvas id="arenaCanvas" width="980" height="640"></canvas>
       <div class="pond-ring" id="pondRing"></div>
 
       <div class="pond-overlay">
         <div class="pond-count" id="fishCountTxt">50</div>
-        <div style="font-size:12px; font-weight:800; letter-spacing:0.5px;">FISH IN POOL (MAX <span id="maxFishTxt">50</span>)</div>
+        <div style="font-size:12px; font-weight:800;">FISH IN POOL (MAX <span id="maxFishTxt">50</span>)</div>
         <div class="pond-zone" id="zoneTxt">🟢 Round 1 Growth: +50% Births</div>
       </div>
 
-      <div class="team-card pos-1" id="card-1"></div>
-      <div class="team-card pos-2" id="card-2"></div>
-      <div class="team-card pos-3" id="card-3"></div>
-      <div class="team-card pos-4" id="card-4"></div>
-      <div class="team-card pos-5" id="card-5"></div>
+      <div class="team-card pos-1" id="card-1">Group 1</div>
+      <div class="team-card pos-2" id="card-2">Group 2</div>
+      <div class="team-card pos-3" id="card-3">Group 3</div>
+      <div class="team-card pos-4" id="card-4">Group 4</div>
+      <div class="team-card pos-5" id="card-5">Group 5</div>
     </div>
 
-    <!-- 3-Round Sustainability & Declining Growth Explanation -->
     <div class="tracker-grid">
-      <div class="round-box" id="rbox-1">
+      <div class="round-box active" id="rbox-1">
         <h4><span>Round 1: High Growth</span> <span style="color:#4ade80;">+50% Birth Rate</span></h4>
-        <p style="color:#94a3b8;">Healthy ecosystem: Surviving fish after Round 1 reproduce by <b>+50%</b> (unless &lt;10 fish left = 0%).</p>
-      </div>
-      <div class="round-box" id="rbox-2">
-        <h4><span>Round 2: Slower Recovery</span> <span style="color:#facc15;">+25% Birth Rate</span></h4>
-        <p style="color:#94a3b8;">Environmental stress: Surviving fish after Round 2 only reproduce by <b>+25%</b> before Round 3!</p>
-      </div>
-      <div class="round-box" id="rbox-3">
-        <h4><span>Round 3: Final Harvest</span> <span style="color:#f87171;">0% (Game Ends)</span></h4>
-        <p style="color:#94a3b8;">⚠️ <b>Golden Rule:</b> If total catch takes the pool to <b>0 fish</b> in ANY round, all fish die &amp; ALL 5 groups lose!</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- MOBILE CONTROLLER VIEW -->
-  <div id="phoneView" class="phone-view" style="display:none;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <h2 id="pTeamTitle">Group 1</h2>
-      <span class="timer-badge" id="pTimer">⏱️ --s</span>
-    </div>
-    <p style="color:#94a3b8; font-size:14px;">Round <b id="pRound" style="color:#fff;">1</b> of 3 • Pool has <b id="pFish" style="color:#38bdf8;">50</b> fish</p>
-    <p id="pRegenNote" style="font-size:12px; color:#facc15; margin-top:4px;">After Round 1: Surviving fish grow by +50%</p>
-
-    <div style="margin:12px 0; padding:10px; background:#0f172a; border-radius:10px; font-size:14px;">
-      Your Basket So Far: <b id="pTotal" style="color:#22c55e;">0 fish</b>
-      <div id="pBasketIcons" style="font-size:16px; margin-top:4px;"></div>
-    </div>
-
-    <p style="font-size:13px; color:#cbd5e1;">How many fish will your group catch this round? (No limit!)</p>
-    <div class="ctrl-row">
-      <button class="btn-step" onclick="changePhoneOrder(-5)">-5</button>
-      <button class="btn-step" onclick="changePhoneOrder(-1)">-1</button>
-      <input type="number" id="pOrderInput" class="phone-input" value="5" min="0" oninput="manualPhoneInput(this.value)">
-      <button class="btn-step" onclick="changePhoneOrder(1)">+1</button>
-      <button class="btn-step" onclick="changePhoneOrder(5)">+5</button>
-    </div>
-
-    <button id="pLockBtn" class="btn-green" style="width:100%; padding:15px; font-size:16px;" onclick="submitPhoneOrder()">🔒 Lock In Catch</button>
-    <p id="pStatus" style="margin-top:12px; font-size:14px; color:#22c55e; font-weight:700;"></p>
-  </div>
-
-  <!-- QR MODAL -->
-  <div id="qrModal" class="modal">
-    <div class="modal-box">
-      <h2>📱 Scan Your Group's QR Code</h2>
-      <p style="color:#94a3b8; font-size:14px; margin-top:4px;">If a phone cannot scan, you can also type each group's number directly on the main screen!</p>
-      <div class="qr-grid" id="qrGrid"></div>
-      <button class="btn-primary" onclick="toggleQR(false)">Close Window</button>
-    </div>
-  </div>
-
-<script>
-  const DB_BASE = "https://fishing-game-f8d4a-default-rtdb.europe-west1.firebasedatabase.app/game";
-  const DB_URL = DB_BASE + ".json";
-  const params = new URLSearchParams(window.location.search);
-  const myTeam = parseInt(params.get("team")) || 0;
-
-  // Pond Geometry & Team Anchor Coordinates for Fishing Lines
-  const POND_X = 490, POND_Y = 330, POND_R = 166;
-  const TEAM_COLORS = { 1: "#38bdf8", 2: "#fbbf24", 3: "#4ade80", 4: "#f472b6", 5: "#a78bfa" };
-  const TEAM_ANCHORS = {
-    1: { x: 490, y: 125 },
-    2: { x: 740, y: 235 },
-    3: { x: 675, y: 515 },
-    4: { x: 305, y: 515 },
-    5: { x: 240, y: 235 }
-  };
-
-  let state = null;
-  let localOrder = 5;
-  let lastRoundSeen = 1;
-  let peekTeam = {};
-  let isAnimating = false;
-
-  // Visual Pool Entities
-  let fishes = [];
-  let flyingCatches = []; // Fish being reeled into team baskets with fishing lines
-  let spawnEffects = [];  // Baby fish green heart pop effects
-
-  const defaultState = (startFish = 50) => ({
-    round: 1,
-    fish: startFish,
-    maxFish: startFish,
-    secretMode: true,
-    timerEnd: 0,
-    phase: "input", // input | revealed | gameover
-    msg: "Round 1: Click 'Start 60s Timer' or let the 5 groups enter their catch!",
-    teams: {
-      1: { name: "Group 1", order: 0, locked: false, total: 0, lastCatch: 0 },
-      2: { name: "Group 2", order: 0, locked: false, total: 0, lastCatch: 0 },
-      3: { name: "Group 3", order: 0, locked: false, total: 0, lastCatch: 0 },
-      4: { name: "Group 4", order: 0, locked: false, total: 0, lastCatch: 0 },
-      5: { name: "Group 5", order: 0, locked: false, total: 0, lastCatch: 0 }
-    }
-  });
-
-  function createSwimmer(isBaby = false) {
-    const anglePos = Math.random() * Math.PI * 2;
-    const dist = Math.random() * (POND_R - 28);
-    return {
-      x: POND_X + Math.cos(anglePos) * dist,
-      y: POND_
