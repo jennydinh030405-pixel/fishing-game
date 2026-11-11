@@ -24,20 +24,22 @@
     .btn-green { background: #16a34a; color: white; padding: 9px 16px; font-size: 14px; }
     .btn-danger { background: #dc2626; color: white; padding: 8px 12px; font-size: 13px; }
     .btn-ghost { background: #334155; color: #e2e8f0; padding: 6px 10px; font-size: 12px; }
+    #actionBtn { padding: 11px 20px; font-size: 15px; min-width: 250px; }
 
     .subbar { background: #0f172a; padding: 8px 20px; text-align: center; border-bottom: 1px solid #1e293b; font-size: 15px; font-weight: 700; color: #38bdf8; }
 
     .arena { position: relative; width: 980px; height: 640px; margin: 8px auto; user-select: none; }
-    #arenaCanvas { position: absolute; top: 0; left: 0; width: 980px; height: 640px; z-index: 5; pointer-events: none; }
+    #arenaCanvas { position: absolute; top: 0; left: 0; width: 980px; height: 640px; z-index: 12; pointer-events: none; }
 
     .pond-ring { position: absolute; top: 330px; left: 490px; transform: translate(-50%, -50%); width: 340px; height: 340px; border-radius: 50%; border: 8px solid #22c55e; background: radial-gradient(circle, #0c4a6e 0%, #082f49 100%); box-shadow: 0 0 45px rgba(56, 189, 248, 0.28); pointer-events: none; z-index: 4; transition: 0.4s; }
-    .pond-overlay { position: absolute; top: 330px; left: 490px; transform: translate(-50%, -50%); pointer-events: none; text-align: center; z-index: 6; text-shadow: 0 2px 10px rgba(0,0,0,0.95); }
+    .pond-overlay { position: absolute; top: 330px; left: 490px; transform: translate(-50%, -50%); pointer-events: none; text-align: center; z-index: 13; text-shadow: 0 2px 10px rgba(0,0,0,0.95); }
     .pond-count { font-size: 52px; font-weight: 900; line-height: 1; color: #ffffff; }
     .pond-zone { font-size: 12px; font-weight: 700; margin-top: 6px; padding: 4px 12px; border-radius: 12px; background: rgba(15, 23, 42, 0.82); border: 1px solid rgba(255,255,255,0.15); display: inline-block; }
 
-    .team-card { position: absolute; width: 235px; background: rgba(30, 41, 59, 0.95); border: 2px solid #475569; border-radius: 14px; padding: 10px 12px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 10; }
+    .team-card { position: absolute; width: 235px; background: rgba(30, 41, 59, 0.95); border: 2px solid #475569; border-radius: 14px; padding: 10px 12px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 10; transition: border-color 0.2s, box-shadow 0.2s; }
     .team-card.locked { border-color: #22c55e; box-shadow: 0 0 16px rgba(34, 197, 94, 0.35); }
     .team-card.sent { border-color: #38bdf8; box-shadow: 0 0 16px rgba(56, 189, 248, 0.4); }
+    .team-card.fishing { border-color: #f97316; box-shadow: 0 0 28px rgba(249, 115, 22, 0.85); }
     .pos-1 { top: 4px; left: 490px; transform: translateX(-50%); }
     .pos-2 { top: 155px; right: 8px; }
     .pos-3 { bottom: 12px; right: 75px; }
@@ -88,18 +90,18 @@
       <div class="controls">
         <label style="color:#94a3b8;">Start-Fische:</label>
         <input type="number" id="initFishInput" value="50" min="5" max="500" style="width:62px; padding:5px;">
-        <button class="btn-ghost" onclick="setCustomFish()">Bestand setzen</button>
+        <button class="btn-ghost" onclick="setPool()">Bestand setzen</button>
         <button id="secretBtn" class="btn-ghost" onclick="toggleSecretMode()">🔓 Modus: Offen</button>
-        <button id="timerBtn" class="btn-amber" onclick="toggleTimer()">⏱️ 60s-Timer starten</button>
         <button class="btn-primary" onclick="toggleQR(true)">📱 5 QR-Codes</button>
-        <button id="actionBtn" class="btn-green" onclick="runRoundAction()">🎣 Fang ausführen</button>
-        <button class="btn-danger" onclick="resetGame()">↺ Neustart</button>
+        <button id="actionBtn" class="btn-green" onclick="runRoundAction()">⏱️ Runde 1: Timer starten</button>
+        <button id="roundResetBtn" class="btn-amber" onclick="resetRound()">↺ Runde zurücksetzen</button>
+        <button class="btn-danger" onclick="resetGame()">⟲ Ganzes Spiel zurücksetzen</button>
       </div>
     </div>
 
     <div class="subbar" id="bannerMsg"></div>
 
-    <div class="arena">
+    <div class="arena" id="arena">
       <div class="pond-ring" id="pondRing"></div>
       <canvas id="arenaCanvas" width="980" height="640"></canvas>
 
@@ -123,7 +125,7 @@
   <div class="modal" id="qrModal">
     <div class="modal-box">
       <h2>📱 QR-Codes für die Gruppen</h2>
-      <p style="color:#94a3b8; margin-top:6px; font-size:14px;">Jede Gruppe scannt ihren Code. Fangmenge, Status und Timer laufen live zwischen Handy und Beamer.</p>
+      <p style="color:#94a3b8; margin-top:6px; font-size:14px;">Jede Gruppe scannt ihren Code. Eingaben sind nur möglich, solange der 60-Sekunden-Timer läuft.</p>
       <div class="qr-grid" id="qrGrid"></div>
       <div class="warn" id="qrWarn" style="display:none;">⚠️ Die Seite ist lokal geöffnet (file://). Handys erreichen sie nur, wenn sie online ist, z. B. über GitHub Pages.</div>
       <button class="btn-primary" style="margin-top:14px;" onclick="toggleQR(false)">Schließen</button>
@@ -171,11 +173,11 @@
   const RNAMES = ['Hohes Wachstum', 'Mittleres Wachstum', 'Geringes Wachstum'];
   const COLORS = ['#f87171', '#fbbf24', '#4ade80', '#38bdf8', '#c084fc'];
   const CX = 490, CY = 330, PR = 150;
+  const FLIGHT = 650;          // Flugzeit eines Fisches zum Team (ms)
 
   /* ================= Live-Verbindung (MQTT über WebSocket) =================
-     Öffentliche Broker, kein Account und kein eigener Server nötig.
-     Host -> Handys: Topic  fischsim/<raum>/state  (retained)
-     Handys -> Host: Topic  fischsim/<raum>/up                              */
+     Host -> Handys: fischsim/<raum>/state (retained)
+     Handys -> Host: fischsim/<raum>/up                                      */
   const BROKERS = ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt'];
   const params = new URLSearchParams(location.search);
   const PHONE_G = parseInt(params.get('g'), 10);
@@ -212,31 +214,39 @@
     open();
   }
 
-  /* ================= Spielzustand (Host) ================= */
+  /* ================= Spielzustand (Host) =================
+     Phasen pro Runde:
+       ready      Runde bereit, Handys gesperrt
+       running    Timer läuft, Handys dürfen senden
+       collect    Timer vorbei, Eingabe geschlossen, Host prüft
+       animating  Fang-Animation läuft
+       done       Runde ausgewertet, nächste Runde wartet               */
   let secret = false;
   let S = newState(50);
 
   function newState(init) {
     return {
-      rid: randId(6), init: init, pool: init, max: init, round: 1, phase: 'harvest', over: false, collapsed: false, closed: false,
+      rid: randId(6), ep: 0, init: init, pool: init, max: init, round: 1, phase: 'ready', over: false, collapsed: false,
       catches: [0, 0, 0, 0, 0], locked: [false, false, false, false, false],
       submitted: [null, null, null, null, null], seen: [false, false, false, false, false],
-      totals: [0, 0, 0, 0, 0], hist: []
+      totals: [0, 0, 0, 0, 0], hist: [],
+      snap: { pool: init, totals: [0, 0, 0, 0, 0] }   // Zustand zu Rundenbeginn (für "Runde zurücksetzen")
     };
   }
 
   function revealed() { return !secret || S.over; }
   function sum(a) { return a.reduce((x, y) => x + y, 0); }
+  function editable() { return ['ready', 'running', 'collect'].indexOf(S.phase) >= 0 && !S.over; }
 
   /* ---------- Snapshot für die Handys ---------- */
   function snapshot() {
     const rev = revealed();
     const l = S.hist[S.hist.length - 1];
     return {
-      type: 'state', rid: S.rid, t: Date.now(), round: S.round, phase: S.phase, over: S.over, collapsed: S.collapsed, closed: S.closed,
-      locked: S.locked, submitted: S.submitted, catches: S.catches, totals: S.totals,
-      pool: rev ? S.pool : null, max: rev ? S.max : null,
-      timerEnd: tInt ? timerEnd : 0,
+      type: 'state', rid: S.rid, ep: S.ep, t: Date.now(), round: S.round, phase: S.phase, over: S.over, collapsed: S.collapsed,
+      locked: S.locked, submitted: S.submitted, totals: S.totals,
+      pool: rev ? S.pool : null,
+      timerEnd: S.phase === 'running' ? timerEnd : 0,
       last: l ? { round: S.hist.length, asked: l.asked, actual: l.actual, start: rev ? l.start : null, end: rev ? l.end : null } : null
     };
   }
@@ -255,7 +265,8 @@
     if (m.type === 'hello') { S.seen[g] = true; render(); }
     else if (m.type === 'catch') {
       S.seen[g] = true;
-      if (m.rid === S.rid && m.round === S.round && S.phase === 'harvest' && !S.over && !S.closed && !S.locked[g]) {
+      // Nur während der Timer läuft!
+      if (m.rid === S.rid && m.ep === S.ep && S.phase === 'running' && timerEnd - Date.now() > 0 && !S.locked[g]) {
         const v = clampC(m.v);
         S.catches[g] = v; S.submitted[g] = v;
       }
@@ -264,16 +275,17 @@
   }
 
   /* ---------- Rendering ---------- */
-  function render() {
+  function render(quiet) {
     $('roundNum').textContent = S.round;
+    const shownPool = S.pool - (anim ? anim.taken : 0);
     $('maxFishTxt').textContent = revealed() ? S.max : '??';
-    $('fishCountTxt').textContent = revealed() ? S.pool : '??';
+    $('fishCountTxt').textContent = revealed() ? shownPool : '??';
 
-    const ratio = S.pool / S.max;
+    const ratio = shownPool / S.max;
     let color, zone;
     const rateTxt = '+' + Math.round(RATES[S.round - 1] * 100) + '% Geburten';
     if (!revealed()) { color = '#64748b'; zone = '❓ Bestand unbekannt'; }
-    else if (S.pool === 0) { color = '#7f1d1d'; zone = '💀 Bestand zusammengebrochen'; }
+    else if (shownPool === 0) { color = '#7f1d1d'; zone = '💀 Bestand zusammengebrochen'; }
     else if (ratio > 0.6) { color = '#22c55e'; zone = '🟢 Runde ' + S.round + ': ' + rateTxt; }
     else if (ratio > 0.3) { color = '#eab308'; zone = '🟡 Bestand unter Druck · ' + rateTxt; }
     else { color = '#ef4444'; zone = '🔴 Kritisch · ' + rateTxt; }
@@ -284,31 +296,40 @@
     renderCards();
     renderTracker();
     renderAction();
-    syncFish();
-    schedulePublish();
+    if (!quiet) { syncFish(); schedulePublish(); }
   }
 
   function renderAction() {
     const b = $('actionBtn');
-    if (S.over) { b.textContent = '🏁 Spiel beendet'; b.disabled = true; return; }
-    b.disabled = false;
-    b.textContent = S.phase === 'harvest' ? '🎣 Fang ausführen' : '➡️ Runde ' + (S.round + 1) + ' starten';
+    let txt, cls, dis = false;
+    if (S.over) { txt = '🏁 Spiel beendet'; cls = 'btn-green'; dis = true; }
+    else if (S.phase === 'ready') { txt = '⏱️ Runde ' + S.round + ': Timer starten'; cls = 'btn-green'; }
+    else if (S.phase === 'running') { txt = '⏹️ Timer vorzeitig beenden'; cls = 'btn-amber'; }
+    else if (S.phase === 'collect') { txt = '🎣 Runde ' + S.round + ': Fang ausführen'; cls = 'btn-primary'; }
+    else if (S.phase === 'animating') { txt = '🎣 Fang läuft …'; cls = 'btn-primary'; dis = true; }
+    else { txt = '⏱️ Runde ' + (S.round + 1) + ': Timer starten'; cls = 'btn-green'; }
+    b.textContent = txt; b.className = cls; b.disabled = dis;
+    $('roundResetBtn').textContent = '↺ Runde ' + S.round + ' zurücksetzen';
+    $('roundResetBtn').disabled = S.phase === 'animating';
   }
 
   function renderCards() {
-    const editable = S.phase === 'harvest' && !S.over;
+    const ed = editable();
     for (let i = 0; i < 5; i++) {
       const card = $('card-' + (i + 1));
-      card.classList.toggle('locked', S.locked[i]);
-      card.classList.toggle('sent', editable && S.submitted[i] !== null && !S.locked[i]);
-      const dis = editable ? '' : 'disabled';
-      const icons = '🐟'.repeat(Math.min(S.totals[i], 120)) + (S.totals[i] > 120 ? '…' : '');
+      card.classList.toggle('locked', S.locked[i] && !anim);
+      card.classList.toggle('sent', ed && S.submitted[i] !== null && !S.locked[i]);
+      card.classList.toggle('fishing', !!anim && anim.cur === i);
+      const dis = ed ? '' : 'disabled';
+      const tot = S.totals[i] + (anim ? anim.tot[i] : 0);
+      const icons = '🐟'.repeat(Math.min(tot, 120)) + (tot > 120 ? '…' : '');
       let st;
-      if (S.phase === 'next' || S.over) st = '🎣 gefangen: ' + (S.hist.length ? S.hist[S.hist.length - 1].actual[i] : 0);
+      if (anim) st = anim.done[i] ? '🎣 gefangen: ' + anim.res.actual[i] : (anim.cur === i ? '🎣 zieht Fische …' : '⏳ wartet …');
+      else if (S.phase === 'done' || S.over) st = '🎣 gefangen: ' + (S.hist.length ? S.hist[S.hist.length - 1].actual[i] : 0);
       else if (S.locked[i]) st = '✅ fixiert: ' + S.catches[i];
       else if (S.submitted[i] !== null) st = '📱 gesendet: ' + S.submitted[i];
-      else if (S.seen[i]) st = '📱 verbunden – überlegt …';
-      else st = '⏳ überlegt …';
+      else if (S.seen[i]) st = '📱 verbunden';
+      else st = '⏳ noch nicht verbunden';
       card.innerHTML =
         '<div class="team-title"><span style="color:' + COLORS[i] + '">Gruppe ' + (i + 1) + '</span><span>' + (S.locked[i] ? '🔒' : '') + '</span></div>' +
         '<div class="team-status">' + st + '</div>' +
@@ -320,7 +341,7 @@
           '<button class="btn-mini" ' + dis + ' onclick="adj(' + i + ',5)">+5</button>' +
         '</div>' +
         '<button class="btn-ghost" ' + dis + ' onclick="toggleLock(' + i + ')">' + (S.locked[i] ? 'Entsperren' : 'Fixieren') + '</button>' +
-        '<div class="team-basket"><div class="basket-header"><span>🧺 Korb</span><strong style="color:#e2e8f0;">' + S.totals[i] + ' gesamt</strong></div>' +
+        '<div class="team-basket"><div class="basket-header"><span>🧺 Korb</span><strong style="color:#e2e8f0;">' + tot + ' gesamt</strong></div>' +
         '<div class="basket-icons">' + icons + '</div></div>';
     }
   }
@@ -344,47 +365,141 @@
   }
 
   function banner(t) { $('bannerMsg').textContent = t; }
+  function readyBanner() {
+    banner('Runde ' + S.round + ' bereit. Mit "Timer starten" öffnest du die Eingabe auf den Handys für 60 Sekunden.');
+  }
 
-  /* ---------- Eingaben (Host) ---------- */
+  /* ---------- Eingaben (Host, manuell) ---------- */
   function clampC(v) { v = parseInt(v, 10); if (isNaN(v) || v < 0) v = 0; return Math.min(v, 500); }
-  function adj(i, d) { if (S.phase !== 'harvest' || S.over) return; S.catches[i] = clampC(S.catches[i] + d); render(); }
-  function setC(i, v) { if (S.phase !== 'harvest' || S.over) return; S.catches[i] = clampC(v); render(); }
-  function toggleLock(i) { S.locked[i] = !S.locked[i]; render(); }
-
+  function adj(i, d) { if (!editable()) return; S.catches[i] = clampC(S.catches[i] + d); render(); }
+  function setC(i, v) { if (!editable()) return; S.catches[i] = clampC(v); render(); }
+  function toggleLock(i) { if (!editable()) return; S.locked[i] = !S.locked[i]; render(); }
   function toggleSecretMode() { secret = !secret; render(); }
 
-  function setCustomFish() {
+  /* ---------- Resets ---------- */
+  function clearRoundInput() {
+    S.catches = [0, 0, 0, 0, 0];
+    S.locked = [false, false, false, false, false];
+    S.submitted = [null, null, null, null, null];
+    S.ep++;
+  }
+
+  // Nur die aktuelle Runde zurück auf Anfang (falls schon ausgewertet: Ergebnis wird rückgängig gemacht)
+  function resetRound() {
+    if (S.phase === 'animating') return;
+    const executed = S.hist.length >= S.round;
+    const q = executed
+      ? 'Runde ' + S.round + ' zurücksetzen? Das Ergebnis dieser Runde wird rückgängig gemacht, der Teich und die Körbe gehen auf den Stand vor der Runde zurück.'
+      : 'Runde ' + S.round + ' zurücksetzen? Alle Eingaben dieser Runde werden gelöscht und der Timer gestoppt. Frühere Runden bleiben erhalten.';
+    if (!confirm(q)) return;
+    stopTimer();
+    if (executed) {
+      S.hist.length = S.round - 1;
+      S.pool = S.snap.pool;
+      S.totals = S.snap.totals.slice();
+      S.over = false; S.collapsed = false;
+      fishes = [];
+    }
+    S.phase = 'ready';
+    clearRoundInput();
+    $('resultModal').classList.remove('active');
+    readyBanner();
+    render();
+  }
+
+  // Alles zurück auf Runde 1
+  function resetGame() {
+    if (S.phase === 'animating') return;
+    if (!confirm('GANZES Spiel zurücksetzen? Alle Runden, Fänge und Körbe gehen verloren. (Nur die aktuelle Runde zurücksetzen: Button "Runde zurücksetzen".)')) return;
+    newGame(S.init);
+  }
+  function setPool() {
     let v = parseInt($('initFishInput').value, 10);
     if (isNaN(v)) v = 50;
     v = Math.max(5, Math.min(500, v));
     $('initFishInput').value = v;
+    if ((S.hist.length > 0 || S.phase !== 'ready') && !confirm('Den Start-Bestand zu ändern setzt das GANZE Spiel zurück. Fortfahren?')) return;
+    newGame(v);
+  }
+  function newGame(v) {
     const seen = S.seen;
     S = newState(v);
     S.seen = seen;
     stopTimer();
+    anim = null;
     fishes = [];
-    startBanner();
     $('resultModal').classList.remove('active');
+    readyBanner();
     render();
   }
 
-  function resetGame() {
-    if (!confirm('Spiel wirklich neu starten?')) return;
-    setCustomFish();
-  }
-
-  function startBanner() {
-    banner('Runde ' + S.round + ': Gruppen geben ihren Fang per Handy ein. Timer starten oder Mengen direkt eintragen!');
-  }
-
-  /* ---------- Spiellogik ---------- */
+  /* ---------- Ablauf / Hauptbutton ---------- */
   function runRoundAction() {
     if (S.over) return;
-    if (S.phase === 'harvest') harvest(); else nextRound();
+    if (S.phase === 'ready') startTimer();
+    else if (S.phase === 'running') endTimer(true);
+    else if (S.phase === 'collect') harvest();
+    else if (S.phase === 'done') { nextRound(); startTimer(); }
   }
 
+  function nextRound() {
+    S.round++;
+    S.phase = 'ready';
+    clearRoundInput();
+    S.snap = { pool: S.pool, totals: S.totals.slice() };
+    readyBanner();
+    render();
+  }
+
+  /* ---------- Timer (Host; Handys rechnen mit der Endzeit) ---------- */
+  let tLeft = 60, tInt = null, timerEnd = 0;
+  function updateTimerUI() {
+    const el = $('hostTimer');
+    el.textContent = '⏱️ ' + tLeft + 's';
+    el.classList.toggle('alarm', tLeft === 0);
+  }
+  function beep() {
+    try {
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.frequency.value = 880; g.gain.value = 0.15;
+      o.start(); o.stop(ac.currentTime + 0.6);
+    } catch (e) {}
+  }
+  function tick() {
+    tLeft = Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000));
+    updateTimerUI();
+    if (tLeft <= 0) endTimer(false);
+  }
+  function startTimer() {
+    if (S.phase !== 'ready') return;
+    if (tInt) clearInterval(tInt);
+    S.phase = 'running';
+    timerEnd = Date.now() + 60000;
+    tInt = setInterval(tick, 250);
+    banner('⏱️ Runde ' + S.round + ' läuft: Die Gruppen geben jetzt ihren Fang am Handy ein (60 s).');
+    tick();
+    render();
+  }
+  function endTimer(early) {
+    if (tInt) { clearInterval(tInt); tInt = null; }
+    timerEnd = 0; tLeft = 0;
+    updateTimerUI();
+    S.phase = 'collect';
+    if (!early) beep();
+    banner((early ? '⏹️ Timer beendet. ' : '⏰ Zeit abgelaufen! ') + 'Eingaben sind geschlossen. Prüfe die Mengen und klicke "Fang ausführen".');
+    render();
+  }
+  function stopTimer() {
+    if (tInt) { clearInterval(tInt); tInt = null; }
+    timerEnd = 0; tLeft = 60;
+    updateTimerUI();
+  }
+
+  /* ---------- Fang ausführen (erst berechnen, dann animieren, dann übernehmen) ---------- */
   function harvest() {
-    stopTimer();
+    if (S.phase !== 'collect') return;
     const asked = S.catches.slice();
     const demand = sum(asked);
     const start = S.pool;
@@ -400,25 +515,27 @@
         if (actual[order[k].i] < asked[order[k].i]) { actual[order[k].i]++; rest--; }
       }
     }
-
     const caught = sum(actual);
-    for (let i = 0; i < 5; i++) S.totals[i] += actual[i];
-    S.pool -= caught;
-    const afterCatch = S.pool;
-
+    const afterCatch = S.pool - caught;
     let born = 0;
-    if (S.pool > 0) {
-      born = Math.round(S.pool * RATES[S.round - 1]);
-      born = Math.min(born, S.max - S.pool);
-      S.pool += born;
-    }
+    if (afterCatch > 0) born = Math.min(Math.round(afterCatch * RATES[S.round - 1]), S.max - afterCatch);
+    const res = { start: start, demand: demand, caught: caught, afterCatch: afterCatch, born: born, end: afterCatch + born, actual: actual, asked: asked };
 
-    S.hist.push({ start: start, demand: demand, caught: caught, afterCatch: afterCatch, born: born, end: S.pool, actual: actual, asked: asked });
-    S.phase = 'next';
+    S.phase = 'animating';
+    banner('🎣 Runde ' + S.round + ': Die Fische werden gefangen …');
+    startAnim(res, () => applyHarvest(res));
+    render();
+  }
 
-    let msg = 'Runde ' + S.round + ' beendet: ' + caught + ' Fische gefangen';
-    if (demand > start) msg += ' (Wunsch ' + demand + ' > Bestand ' + start + ', anteilig gekürzt)';
-    msg += secret ? '.' : ', ' + born + ' neue geboren.';
+  function applyHarvest(res) {
+    for (let i = 0; i < 5; i++) S.totals[i] += res.actual[i];
+    S.pool = res.end;
+    S.hist.push(res);
+    S.phase = 'done';
+
+    let msg = 'Runde ' + S.round + ' beendet: ' + res.caught + ' Fische gefangen';
+    if (res.demand > res.start) msg += ' (Wunsch ' + res.demand + ' > Bestand ' + res.start + ', anteilig gekürzt)';
+    msg += secret ? '.' : ', ' + res.born + ' neue geboren.';
 
     if (S.pool === 0) {
       S.over = true; S.collapsed = true;
@@ -432,17 +549,6 @@
     if (S.over) showResults();
   }
 
-  function nextRound() {
-    S.round++;
-    S.phase = 'harvest';
-    S.closed = false;
-    S.catches = [0, 0, 0, 0, 0];
-    S.locked = [false, false, false, false, false];
-    S.submitted = [null, null, null, null, null];
-    startBanner();
-    render();
-  }
-
   function showResults() {
     const total = sum(S.totals);
     const rank = S.totals.map((t, i) => ({ i: i, t: t })).sort((a, b) => b.t - a.t);
@@ -454,53 +560,6 @@
       '<div class="rank-row"><span>' + (k + 1) + '. <span style="color:' + COLORS[r.i] + '">Gruppe ' + (r.i + 1) + '</span></span><span>' + r.t + ' 🐟</span></div>'
     ).join('');
     $('resultModal').classList.add('active');
-  }
-
-  /* ---------- Timer (Host; Handys rechnen mit der Endzeit) ---------- */
-  let tLeft = 60, tInt = null, timerEnd = 0;
-  function updateTimerUI() {
-    const el = $('hostTimer');
-    el.textContent = '⏱️ ' + tLeft + 's';
-    el.classList.toggle('alarm', tLeft === 0);
-    $('timerBtn').textContent = tInt ? '⏸️ Timer stoppen' : '⏱️ 60s-Timer starten';
-  }
-  function beep() {
-    try {
-      const ac = new (window.AudioContext || window.webkitAudioContext)();
-      const o = ac.createOscillator(), g = ac.createGain();
-      o.connect(g); g.connect(ac.destination);
-      o.frequency.value = 880; g.gain.value = 0.15;
-      o.start(); o.stop(ac.currentTime + 0.6);
-    } catch (e) {}
-  }
-  function tick() {
-    tLeft = Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000));
-    if (tLeft <= 0) {
-      clearInterval(tInt); tInt = null; timerEnd = 0;
-      S.closed = true;
-      beep();
-      banner('⏰ Zeit abgelaufen! Eingaben der Handys sind geschlossen. "Fang ausführen" klicken.');
-      updateTimerUI();
-      render();
-      return;
-    }
-    updateTimerUI();
-  }
-  function startTimer() {
-    if (tInt) clearInterval(tInt);
-    S.closed = false;
-    timerEnd = Date.now() + 60000;
-    tInt = setInterval(tick, 250);
-    tick();
-    render();
-  }
-  function stopTimer() {
-    if (tInt) { clearInterval(tInt); tInt = null; }
-    timerEnd = 0; tLeft = 60;
-    updateTimerUI();
-  }
-  function toggleTimer() {
-    if (tInt) { stopTimer(); render(); } else if (S.phase === 'harvest' && !S.over) startTimer();
   }
 
   /* ---------- QR-Codes ---------- */
@@ -520,10 +579,11 @@
     $('qrModal').classList.toggle('active', !!show);
   }
 
-  /* ---------- Fisch-Animation ---------- */
+  /* ---------- Fisch-Animation (Teich + Fang-Flug) ---------- */
   const cv = $('arenaCanvas');
   const ctx = cv.getContext('2d');
   let fishes = [];
+  let anim = null;   // { res, queue, sprites, cur, done, taken, tot, onDone }
 
   function mkFish() {
     const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * (PR - 15);
@@ -532,6 +592,7 @@
              s: 0.8 + Math.random() * 0.7, hue: 20 + Math.random() * 40 };
   }
   function syncFish() {
+    if (anim) return;
     let n;
     if (S.pool === 0) n = 0;
     else if (revealed()) n = Math.min(S.pool, 150);
@@ -539,6 +600,87 @@
     while (fishes.length < n) fishes.push(mkFish());
     if (fishes.length > n) fishes.length = n;
   }
+
+  function drawFish(x, y, ang, scale, hue) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(ang);
+    ctx.scale(scale, scale);
+    ctx.fillStyle = 'hsl(' + hue + ',90%,60%)';
+    ctx.beginPath(); ctx.ellipse(0, 0, 8, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(-14, -5); ctx.lineTo(-14, 5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath(); ctx.arc(4, -1, 1.1, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function basketTarget(team) {
+    const ar = $('arena').getBoundingClientRect();
+    const el = $('card-' + (team + 1)).querySelector('.team-basket') || $('card-' + (team + 1));
+    const r = el.getBoundingClientRect();
+    return { x: r.left - ar.left + r.width / 2, y: r.top - ar.top + r.height / 2 };
+  }
+
+  // Zeitplan: Gruppe 1, dann 2, 3, 4, 5. Jede zieht ihre Fische nacheinander aus dem Teich.
+  function startAnim(res, onDone) {
+    const queue = [];
+    let t = performance.now() + 500;
+    for (let i = 0; i < 5; i++) {
+      const n = res.actual[i];
+      const m = Math.min(n, 14);
+      const stagger = m > 1 ? Math.min(80, 700 / m) : 0;
+      queue.push({ at: t, type: 'team', team: i });
+      let rem = n;
+      for (let k = 0; k < m; k++) {
+        const share = Math.ceil(rem / (m - k)); rem -= share;
+        queue.push({ at: t + k * stagger, type: 'fish', team: i, share: share });
+      }
+      const dur = (m > 0 ? stagger * (m - 1) + FLIGHT : 0) + 250;
+      queue.push({ at: t + dur, type: 'teamdone', team: i });
+      t += dur + 300;
+    }
+    anim = { res: res, queue: queue, sprites: [], cur: -1, done: [false, false, false, false, false], taken: 0, tot: [0, 0, 0, 0, 0], onDone: onDone };
+  }
+
+  function stepAnim(now) {
+    // Zeitplan abarbeiten
+    while (anim.queue.length && anim.queue[0].at <= now) {
+      const ev = anim.queue.shift();
+      if (ev.type === 'team') { anim.cur = ev.team; render(true); }
+      else if (ev.type === 'teamdone') { anim.done[ev.team] = true; render(true); }
+      else if (ev.type === 'fish') {
+        let src;
+        if (fishes.length) { src = fishes.splice(Math.floor(Math.random() * fishes.length), 1)[0]; }
+        else { src = mkFish(); }
+        const tg = basketTarget(ev.team);
+        anim.sprites.push({ x0: src.x, y0: src.y, x1: tg.x, y1: tg.y, t0: now, hue: src.hue, team: ev.team, share: ev.share });
+      }
+    }
+    // Flug zeichnen / Ankünfte verbuchen
+    for (let k = anim.sprites.length - 1; k >= 0; k--) {
+      const sp = anim.sprites[k];
+      const p = Math.min(1, (now - sp.t0) / FLIGHT);
+      if (p >= 1) {
+        anim.sprites.splice(k, 1);
+        anim.tot[sp.team] += sp.share;
+        anim.taken += sp.share;
+        render(true);
+        continue;
+      }
+      const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;   // easeInOut
+      const x = sp.x0 + (sp.x1 - sp.x0) * e;
+      const y = sp.y0 + (sp.y1 - sp.y0) * e - Math.sin(Math.PI * e) * 45;
+      const ang = Math.atan2(sp.y1 - sp.y0, sp.x1 - sp.x0) + Math.sin(e * 14) * 0.25;
+      drawFish(x, y, ang, 1.4 - 0.4 * e, sp.hue);
+    }
+    // Fertig?
+    if (!anim.queue.length && !anim.sprites.length) {
+      const cb = anim.onDone;
+      anim = null;
+      cb();
+    }
+  }
+
   function loop() {
     ctx.clearRect(0, 0, 980, 640);
     for (const f of fishes) {
@@ -553,41 +695,34 @@
       const sp = Math.hypot(f.vx, f.vy);
       if (sp > 1.4) { f.vx *= 1.4 / sp; f.vy *= 1.4 / sp; }
       if (sp < 0.3) { f.vx *= 1.5; f.vy *= 1.5; }
-
-      ctx.save();
-      ctx.translate(f.x, f.y);
-      ctx.rotate(Math.atan2(f.vy, f.vx));
-      ctx.scale(f.s, f.s);
-      ctx.fillStyle = 'hsl(' + f.hue + ',90%,60%)';
-      ctx.beginPath(); ctx.ellipse(0, 0, 8, 4.5, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(-14, -5); ctx.lineTo(-14, 5); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath(); ctx.arc(4, -1, 1.1, 0, Math.PI * 2); ctx.fill();
-      ctx.restore();
+      drawFish(f.x, f.y, Math.atan2(f.vy, f.vx), f.s, f.hue);
     }
+    if (anim) stepAnim(performance.now());
     requestAnimationFrame(loop);
   }
 
   /* ================= Handy-Ansicht ================= */
   let ST = null, offset = 0, pending = null, phVal = 0, phKey = '';
 
+  function phTimeLeft() { return ST && ST.timerEnd ? Math.max(0, Math.ceil((ST.timerEnd - (Date.now() + offset)) / 1000)) : 0; }
+
+  // Eingabe nur, solange der Timer läuft
   function phCanEdit() {
-    if (!ST || ST.phase !== 'harvest' || ST.over || ST.closed || ST.locked[PHONE_G - 1]) return false;
-    if (ST.timerEnd && ST.timerEnd - (Date.now() + offset) <= 0) return false;
-    return true;
+    if (!ST || ST.over || ST.phase !== 'running' || ST.locked[PHONE_G - 1]) return false;
+    return phTimeLeft() > 0;
   }
 
   function phSet(v) { phVal = clampC(v); $('phInput').value = phVal; phRender(); }
-  function phAdj(d) { phSet(phVal + d); }
+  function phAdj(d) { if (phCanEdit()) phSet(phVal + d); }
 
   function phSendNow() {
     if (!pending || !mq || !mq.connected || !ST) return;
     pending.tries++;
-    mq.publish(T_UP, JSON.stringify({ type: 'catch', rid: ST.rid, round: ST.round, g: PHONE_G, v: pending.v }), { qos: 1 });
+    mq.publish(T_UP, JSON.stringify({ type: 'catch', rid: ST.rid, ep: ST.ep, g: PHONE_G, v: pending.v }), { qos: 1 });
     setTimeout(() => {
-      if (pending && ST && ST.submitted[PHONE_G - 1] !== pending.v && pending.tries < 3) phSendNow();
+      if (pending && ST && ST.submitted[PHONE_G - 1] !== pending.v && pending.tries < 3 && phCanEdit()) phSendNow();
       phRender();
-    }, 3000);
+    }, 2500);
   }
   function phConfirm() {
     if (!phCanEdit()) return;
@@ -599,17 +734,21 @@
   function phTimer() {
     const el = $('phTimer');
     if (!ST) { el.textContent = '⏱️ –'; el.classList.remove('alarm'); return; }
-    if (ST.timerEnd) {
-      const left = Math.max(0, Math.ceil((ST.timerEnd - (Date.now() + offset)) / 1000));
+    if (ST.phase === 'running' && ST.timerEnd) {
+      const left = phTimeLeft();
       el.textContent = '⏱️ ' + left + 's';
       el.classList.toggle('alarm', left === 0);
-    } else if (ST.closed && ST.phase === 'harvest') {
+      if (left === 0) phRender();
+    } else if (ST.phase === 'ready') {
+      el.textContent = '⏱️ wartet auf Start'; el.classList.remove('alarm');
+    } else if (ST.phase === 'collect') {
       el.textContent = '⏰ Zeit abgelaufen'; el.classList.add('alarm');
     } else {
-      el.textContent = '⏱️ Timer läuft nicht'; el.classList.remove('alarm');
+      el.textContent = '⏱️ –'; el.classList.remove('alarm');
     }
   }
 
+  let phLastCan = null;
   function phRender() {
     const g = PHONE_G - 1;
     $('phConn').textContent = connOk ? '🟢 live verbunden' : '🔴 keine Verbindung …';
@@ -620,8 +759,9 @@
       phTimer();
       return;
     }
+    const ph = ST.phase;
     $('phRound').textContent = ST.over ? '🏁 Spiel beendet' : 'Runde ' + ST.round + ' / 3';
-    const showCtl = ST.phase === 'harvest' && !ST.over;
+    const showCtl = ['ready', 'running', 'collect'].indexOf(ph) >= 0 && !ST.over;
     $('phControls').style.display = showCtl ? 'block' : 'none';
 
     const can = phCanEdit();
@@ -629,22 +769,32 @@
     if (document.activeElement !== $('phInput')) $('phInput').value = phVal;
 
     let msg = '';
+    const s = ST.submitted[g];
     if (showCtl) {
-      const s = ST.submitted[g];
-      if (ST.locked[g]) msg = '<span style="color:#fbbf24;">🔒 Vom Host gesperrt</span>';
-      else if (pending && s !== pending.v) {
-        msg = pending.tries >= 3
-          ? '<span style="color:#f87171;">⚠️ Nicht angekommen. Bitte nochmal senden.</span>'
-          : '<span style="color:#38bdf8;">⏳ Wird gesendet …</span>';
-      } else if (s !== null) {
-        msg = '<span style="color:#4ade80;">✅ Beim Host eingetragen: ' + s + ' 🐟</span>' +
-              (can ? '<br><span style="font-size:13px;color:#94a3b8;">Du kannst bis zum Zeitende noch ändern.</span>' : '');
-      } else if (!can) {
-        msg = '<span style="color:#f87171;">⏰ Eingabe geschlossen. Nichts gesendet.</span>';
+      if (ph === 'ready') {
+        msg = '<span style="color:#94a3b8;">⏳ Warte, bis der Host den Timer startet.<br>Erst dann kannst du eingeben.</span>';
+        if (ST.last) msg += '<br><span style="font-size:14px;color:#94a3b8;">Letzte Runde: gefangen ' + ST.last.actual[g] + ' · Korb gesamt ' + ST.totals[g] + ' 🐟</span>';
+      } else if (ST.locked[g]) {
+        msg = '<span style="color:#fbbf24;">🔒 Vom Host gesperrt</span>';
+      } else if (ph === 'running') {
+        if (pending && s !== pending.v) {
+          msg = pending.tries >= 3
+            ? '<span style="color:#f87171;">⚠️ Nicht angekommen. Bitte nochmal senden.</span>'
+            : '<span style="color:#38bdf8;">⏳ Wird gesendet …</span>';
+        } else if (s !== null) {
+          msg = '<span style="color:#4ade80;">✅ Beim Host eingetragen: ' + s + ' 🐟</span>' +
+                (can ? '<br><span style="font-size:13px;color:#94a3b8;">Du kannst bis zum Zeitende noch ändern.</span>' : '');
+        } else if (!can) {
+          msg = '<span style="color:#f87171;">⏰ Zeit abgelaufen. Nichts gesendet.</span>';
+        } else {
+          msg = '<span style="color:#94a3b8;">Noch nichts gesendet</span>';
+        }
       } else {
-        msg = '<span style="color:#94a3b8;">Noch nichts gesendet</span>';
+        msg = '<span style="color:#f87171;">⏰ Eingabe geschlossen.</span><br>' +
+              (s !== null ? 'Eingetragen: <b>' + s + '</b> 🐟' : 'Es wurde nichts gesendet.');
       }
-      if (!can && s !== null && !ST.locked[g]) msg += '<br><span style="font-size:13px;color:#94a3b8;">Eingabe geschlossen.</span>';
+    } else if (ph === 'animating') {
+      msg = '🎣 Der Fang wird ausgeführt …';
     } else if (ST.last) {
       const l = ST.last;
       msg = 'Runde ' + l.round + ' ausgewertet:<br>Gewünscht <b>' + l.asked[g] + '</b> · Gefangen <b style="color:#4ade80;">' + l.actual[g] + '</b> 🐟<br>' +
@@ -662,7 +812,7 @@
     if (topic !== T_STATE || m.type !== 'state') return;
     if (ST && m.rid === ST.rid && m.t < ST.t) return;
     if (!pk.retain) offset = m.t - Date.now(); // nur bei Live-Nachrichten die Uhr abgleichen
-    const key = m.rid + '-' + m.round;
+    const key = m.rid + '-' + m.ep;
     if (key !== phKey) { phKey = key; phVal = 0; pending = null; }
     ST = m;
     phRender();
@@ -688,7 +838,7 @@
       return;
     }
 
-    startBanner();
+    readyBanner();
     updateTimerUI();
     render();
     loop();
