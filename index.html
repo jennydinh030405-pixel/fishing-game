@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sustainability Fishing Game</title>
+  <title>Fischerei-Simulation: Nachhaltigkeit</title>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; }
     body { background: #0b192c; color: #f1f5f9; min-height: 100vh; overflow-x: hidden; }
@@ -16,6 +16,8 @@
     .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
     .badge { padding: 6px 12px; border-radius: 99px; font-weight: 700; background: #0f172a; border: 1px solid #334155; }
     .timer-badge { padding: 6px 14px; border-radius: 99px; font-weight: 900; font-size: 16px; background: #7c2d12; color: #fed7aa; border: 2px solid #f97316; }
+    .timer-badge.alarm { background: #dc2626; color: #fff; animation: blink 0.6s infinite; }
+    @keyframes blink { 50% { opacity: 0.45; } }
     .btn-primary { background: #0284c7; color: white; padding: 8px 14px; font-size: 13px; }
     .btn-amber { background: #d97706; color: white; padding: 8px 14px; font-size: 13px; }
     .btn-green { background: #16a34a; color: white; padding: 9px 16px; font-size: 14px; }
@@ -27,7 +29,7 @@
     .arena { position: relative; width: 980px; height: 640px; margin: 8px auto; user-select: none; }
     #arenaCanvas { position: absolute; top: 0; left: 0; width: 980px; height: 640px; z-index: 5; pointer-events: none; }
 
-    .pond-ring { position: absolute; top: 330px; left: 490px; transform: translate(-50%, -50%); width: 340px; height: 340px; border-radius: 50%; border: 8px solid #22c55e; box-shadow: 0 0 45px rgba(56, 189, 248, 0.28); pointer-events: none; z-index: 4; transition: 0.4s; }
+    .pond-ring { position: absolute; top: 330px; left: 490px; transform: translate(-50%, -50%); width: 340px; height: 340px; border-radius: 50%; border: 8px solid #22c55e; background: radial-gradient(circle, #0c4a6e 0%, #082f49 100%); box-shadow: 0 0 45px rgba(56, 189, 248, 0.28); pointer-events: none; z-index: 4; transition: 0.4s; }
     .pond-overlay { position: absolute; top: 330px; left: 490px; transform: translate(-50%, -50%); pointer-events: none; text-align: center; z-index: 6; text-shadow: 0 2px 10px rgba(0,0,0,0.95); }
     .pond-count { font-size: 52px; font-weight: 900; line-height: 1; color: #ffffff; }
     .pond-zone { font-size: 12px; font-weight: 700; margin-top: 6px; padding: 4px 12px; border-radius: 12px; background: rgba(15, 23, 42, 0.82); border: 1px solid rgba(255,255,255,0.15); display: inline-block; }
@@ -40,73 +42,445 @@
     .pos-4 { bottom: 12px; left: 75px; }
     .pos-5 { top: 155px; left: 8px; }
     .team-title { font-weight: 800; font-size: 15px; margin-bottom: 3px; display: flex; justify-content: space-between; align-items: center; }
-    .team-status { font-size: 16px; font-weight: 900; margin: 3px 0; color: #38bdf8; }
-    .host-manual { display: flex; justify-content: center; align-items: center; gap: 4px; margin: 5px 0; background: #0f172a; padding: 4px; border-radius: 8px; }
-    .btn-mini { width: 25px; height: 25px; background: #334155; color: white; font-size: 12px; border-radius: 6px; }
+    .team-status { font-size: 14px; font-weight: 800; margin: 3px 0; color: #38bdf8; }
+    .host-manual { display: flex; justify-content: center; align-items: center; gap: 3px; margin: 5px 0; background: #0f172a; padding: 4px; border-radius: 8px; }
+    .btn-mini { width: 26px; height: 26px; background: #334155; color: white; font-size: 11px; border-radius: 6px; }
     .team-basket { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 5px 6px; margin-top: 5px; min-height: 44px; text-align: left; }
     .basket-header { font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; margin-bottom: 2px; }
     .basket-icons { font-size: 14px; line-height: 1.25; word-break: break-all; max-height: 36px; overflow-y: auto; }
 
     .tracker-grid { max-width: 980px; margin: 0 auto 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 10px; }
-    .round-box { background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 10px 14px; font-size: 13px; }
+    .round-box { background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 10px 14px; font-size: 13px; line-height: 1.5; }
     .round-box.active { border-color: #38bdf8; background: #172554; }
-    .round-box h4 { font-size: 14px; margin-bottom: 4px; color: #f8fafc; display: flex; justify-content: space-between; }
+    .round-box h4 { font-size: 14px; margin-bottom: 4px; color: #f8fafc; display: flex; justify-content: space-between; gap: 6px; }
 
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.82); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.82); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; overflow: auto; }
     .modal.active { display: flex; }
     .modal-box { background: #1e293b; border: 2px solid #475569; border-radius: 16px; padding: 24px; max-width: 850px; width: 100%; text-align: center; }
     .qr-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 20px 0; }
     .qr-item { background: #0f172a; padding: 12px 8px; border-radius: 10px; border: 1px solid #334155; }
     .qr-item img { width: 120px; height: 120px; border-radius: 8px; background: white; padding: 6px; margin: 8px 0; }
+    .warn { background: #7c2d12; color: #fed7aa; padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-top: 10px; }
+    .rank-row { display: flex; justify-content: space-between; padding: 8px 12px; background: #0f172a; border-radius: 8px; margin: 6px 0; font-weight: 700; }
 
     .phone-view { max-width: 420px; margin: 25px auto; background: #1e293b; border-radius: 20px; padding: 24px 18px; text-align: center; border: 2px solid #38bdf8; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
     .ctrl-row { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 18px 0; }
     .btn-step { width: 48px; height: 48px; font-size: 18px; background: #334155; color: white; border-radius: 12px; }
     .phone-input { width: 110px; height: 56px; font-size: 32px; }
+    #phoneView { display: none; padding: 0 12px; }
   </style>
 </head>
 <body>
 
-  <!-- PROJECTOR HOST VIEW (Sichtbar beim Laden!) -->
+  <!-- HOST-ANSICHT (Beamer) -->
   <div id="hostView">
     <div class="topbar">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <strong style="font-size:17px;">🐟 Commons Fishing Simulator</strong>
-        <span class="badge">Round <span id="roundNum">1</span> / 3</span>
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <strong style="font-size:17px;">🐟 Fischerei-Simulation</strong>
+        <span class="badge">Runde <span id="roundNum">1</span> / 3</span>
         <span class="timer-badge" id="hostTimer">⏱️ 60s</span>
       </div>
 
       <div class="controls">
-        <label style="color:#94a3b8;">Start Fish:</label>
-        <input type="number" id="initFishInput" value="50" min="5" max="500" style="width:60px; padding:5px;">
-        <button class="btn-ghost" onclick="setCustomFish()">Set Pool</button>
-        <button id="secretBtn" class="btn-ghost" onclick="toggleSecretMode()">🔒 Mode: Secret (??)</button>
-        <button class="btn-amber" onclick="start60sTimer()">⏱️ Start 60s Timer</button>
-        <button class="btn-primary" onclick="toggleQR(true)">📱 5 QR Codes</button>
-        <button id="actionBtn" class="btn-green" onclick="runRoundAction()">🎣 Execute Harvest</button>
-        <button class="btn-danger" onclick="resetGame()">↺ Reset</button>
+        <label style="color:#94a3b8;">Start-Fische:</label>
+        <input type="number" id="initFishInput" value="50" min="5" max="500" style="width:62px; padding:5px;">
+        <button class="btn-ghost" onclick="setCustomFish()">Bestand setzen</button>
+        <button id="secretBtn" class="btn-ghost" onclick="toggleSecretMode()">🔓 Modus: Offen</button>
+        <button id="timerBtn" class="btn-amber" onclick="toggleTimer()">⏱️ 60s-Timer starten</button>
+        <button class="btn-primary" onclick="toggleQR(true)">📱 5 QR-Codes</button>
+        <button id="actionBtn" class="btn-green" onclick="runRoundAction()">🎣 Fang ausführen</button>
+        <button class="btn-danger" onclick="resetGame()">↺ Neustart</button>
       </div>
     </div>
 
-    <div class="subbar" id="bannerMsg">Round 1: Click "Start 60s Timer" or let groups enter their catch!</div>
+    <div class="subbar" id="bannerMsg"></div>
 
     <div class="arena">
-      <canvas id="arenaCanvas" width="980" height="640"></canvas>
       <div class="pond-ring" id="pondRing"></div>
+      <canvas id="arenaCanvas" width="980" height="640"></canvas>
 
       <div class="pond-overlay">
         <div class="pond-count" id="fishCountTxt">50</div>
-        <div style="font-size:12px; font-weight:800;">FISH IN POOL (MAX <span id="maxFishTxt">50</span>)</div>
-        <div class="pond-zone" id="zoneTxt">🟢 Round 1 Growth: +50% Births</div>
+        <div style="font-size:12px; font-weight:800;">FISCHE IM TEICH (MAX <span id="maxFishTxt">50</span>)</div>
+        <div class="pond-zone" id="zoneTxt"></div>
       </div>
 
-      <div class="team-card pos-1" id="card-1">Group 1</div>
-      <div class="team-card pos-2" id="card-2">Group 2</div>
-      <div class="team-card pos-3" id="card-3">Group 3</div>
-      <div class="team-card pos-4" id="card-4">Group 4</div>
-      <div class="team-card pos-5" id="card-5">Group 5</div>
+      <div class="team-card pos-1" id="card-1"></div>
+      <div class="team-card pos-2" id="card-2"></div>
+      <div class="team-card pos-3" id="card-3"></div>
+      <div class="team-card pos-4" id="card-4"></div>
+      <div class="team-card pos-5" id="card-5"></div>
     </div>
 
-    <div class="tracker-grid">
-      <div class="round-box active" id="rbox-1">
-        <h4><span>Round 1: High Growth</span> <span style="color:#4ade80;">+50% Birth Rate</span></h4>
+    <div class="tracker-grid" id="tracker"></div>
+  </div>
+
+  <!-- QR-MODAL -->
+  <div class="modal" id="qrModal">
+    <div class="modal-box">
+      <h2>📱 QR-Codes für die Gruppen</h2>
+      <p style="color:#94a3b8; margin-top:6px; font-size:14px;">Jede Gruppe scannt ihren Code. Auf dem Handy überlegt sie ihre Fangmenge und nennt sie dem Host, der sie in die Gruppenkarte einträgt.</p>
+      <div class="qr-grid" id="qrGrid"></div>
+      <div class="warn" id="qrWarn" style="display:none;">⚠️ Die Seite ist lokal geöffnet (file://). Handys erreichen sie nur, wenn sie online ist, z. B. über GitHub Pages.</div>
+      <button class="btn-primary" style="margin-top:14px;" onclick="toggleQR(false)">Schließen</button>
+    </div>
+  </div>
+
+  <!-- ERGEBNIS-MODAL -->
+  <div class="modal" id="resultModal">
+    <div class="modal-box">
+      <h2 id="resTitle">🏁 Ergebnis</h2>
+      <p id="resText" style="margin:10px 0 14px; color:#cbd5e1; line-height:1.5;"></p>
+      <div id="resRank"></div>
+      <button class="btn-primary" style="margin-top:14px;" onclick="$('resultModal').classList.remove('active')">Schließen</button>
+    </div>
+  </div>
+
+  <!-- HANDY-ANSICHT -->
+  <div id="phoneView">
+    <div class="phone-view">
+      <h2 id="phTitle">Gruppe 1</h2>
+      <p style="color:#94a3b8; margin-top:6px; font-size:14px;">Wie viele Fische fangt ihr in dieser Runde?</p>
+      <div class="ctrl-row">
+        <button class="btn-step" onclick="phAdj(-5)">−5</button>
+        <button class="btn-step" onclick="phAdj(-1)">−1</button>
+        <input type="number" id="phInput" class="phone-input" value="0" min="0" max="500" onchange="phSet(this.value)">
+        <button class="btn-step" onclick="phAdj(1)">+1</button>
+        <button class="btn-step" onclick="phAdj(5)">+5</button>
+      </div>
+      <button class="btn-green" style="width:100%; padding:14px; font-size:16px;" onclick="phConfirm()">✅ Entscheidung festlegen</button>
+      <div id="phMsg" style="margin-top:16px; font-size:18px; font-weight:800; color:#4ade80; min-height:52px;"></div>
+    </div>
+  </div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const RATES = [0.5, 0.25, 0.1];
+  const RNAMES = ['Hohes Wachstum', 'Mittleres Wachstum', 'Geringes Wachstum'];
+  const COLORS = ['#f87171', '#fbbf24', '#4ade80', '#38bdf8', '#c084fc'];
+  const CX = 490, CY = 330, PR = 150;
+
+  let secret = false;
+  let S = newState(50);
+
+  function newState(init) {
+    return {
+      init: init, pool: init, max: init, round: 1, phase: 'harvest', over: false, collapsed: false,
+      catches: [0, 0, 0, 0, 0], locked: [false, false, false, false, false],
+      totals: [0, 0, 0, 0, 0], hist: []
+    };
+  }
+
+  /* ---------- Hilfsfunktionen ---------- */
+  function revealed() { return !secret || S.over; }
+  function sum(a) { return a.reduce((x, y) => x + y, 0); }
+
+  /* ---------- Rendering ---------- */
+  function render() {
+    $('roundNum').textContent = S.round;
+    $('maxFishTxt').textContent = revealed() ? S.max : '??';
+    $('fishCountTxt').textContent = revealed() ? S.pool : '??';
+
+    const ratio = S.pool / S.max;
+    let color = '#22c55e', zone;
+    const rateTxt = '+' + Math.round(RATES[S.round - 1] * 100) + '% Geburten';
+    if (!revealed()) { color = '#64748b'; zone = '❓ Bestand unbekannt'; }
+    else if (S.pool === 0) { color = '#7f1d1d'; zone = '💀 Bestand zusammengebrochen'; }
+    else if (ratio > 0.6) { color = '#22c55e'; zone = '🟢 Runde ' + S.round + ': ' + rateTxt; }
+    else if (ratio > 0.3) { color = '#eab308'; zone = '🟡 Bestand unter Druck · ' + rateTxt; }
+    else { color = '#ef4444'; zone = '🔴 Kritisch · ' + rateTxt; }
+    $('pondRing').style.borderColor = color;
+    $('zoneTxt').textContent = zone;
+
+    $('secretBtn').textContent = secret ? '🔒 Modus: Geheim (??)' : '🔓 Modus: Offen';
+    renderCards();
+    renderTracker();
+    renderAction();
+    syncFish();
+  }
+
+  function renderAction() {
+    const b = $('actionBtn');
+    if (S.over) { b.textContent = '🏁 Spiel beendet'; b.disabled = true; return; }
+    b.disabled = false;
+    b.textContent = S.phase === 'harvest' ? '🎣 Fang ausführen' : '➡️ Runde ' + (S.round + 1) + ' starten';
+  }
+
+  function renderCards() {
+    const editable = S.phase === 'harvest' && !S.over;
+    for (let i = 0; i < 5; i++) {
+      const card = $('card-' + (i + 1));
+      card.classList.toggle('locked', S.locked[i]);
+      const dis = editable ? '' : 'disabled';
+      const icons = '🐟'.repeat(Math.min(S.totals[i], 120)) + (S.totals[i] > 120 ? '…' : '');
+      card.innerHTML =
+        '<div class="team-title"><span style="color:' + COLORS[i] + '">Gruppe ' + (i + 1) + '</span><span>' + (S.locked[i] ? '🔒' : '') + '</span></div>' +
+        '<div class="team-status">' + (S.phase === 'next' || S.over ? '🎣 gefangen: ' + (S.hist.length ? S.hist[S.hist.length - 1].actual[i] : 0) : (S.locked[i] ? '✅ fixiert: ' + S.catches[i] : '⏳ überlegt …')) + '</div>' +
+        '<div class="host-manual">' +
+          '<button class="btn-mini" ' + dis + ' onclick="adj(' + i + ',-5)">−5</button>' +
+          '<button class="btn-mini" ' + dis + ' onclick="adj(' + i + ',-1)">−1</button>' +
+          '<input type="number" min="0" max="500" value="' + S.catches[i] + '" ' + dis + ' style="width:54px;height:26px;font-size:15px;" onchange="setC(' + i + ',this.value)">' +
+          '<button class="btn-mini" ' + dis + ' onclick="adj(' + i + ',1)">+1</button>' +
+          '<button class="btn-mini" ' + dis + ' onclick="adj(' + i + ',5)">+5</button>' +
+        '</div>' +
+        '<button class="btn-ghost" ' + dis + ' onclick="toggleLock(' + i + ')">' + (S.locked[i] ? 'Entsperren' : 'Fixieren') + '</button>' +
+        '<div class="team-basket"><div class="basket-header"><span>🧺 Korb</span><strong style="color:#e2e8f0;">' + S.totals[i] + ' gesamt</strong></div>' +
+        '<div class="basket-icons">' + icons + '</div></div>';
+    }
+  }
+
+  function renderTracker() {
+    let html = '';
+    for (let i = 0; i < 3; i++) {
+      const h = S.hist[i];
+      const active = (i + 1 === S.round && !S.over) ? ' active' : '';
+      let body;
+      if (h) {
+        const f = x => revealed() ? x : '??';
+        body = 'Start: <b>' + f(h.start) + '</b> Fische<br>Gewünscht: <b>' + h.demand + '</b> · Gefangen: <b>' + h.caught + '</b><br>' +
+               'Rest: <b>' + f(h.afterCatch) + '</b> · Nachwuchs: <b>+' + f(h.born) + '</b><br>Ende: <b>' + f(h.end) + '</b> Fische';
+      } else {
+        body = '<span style="color:#64748b;">— noch nicht gespielt —</span>';
+      }
+      html += '<div class="round-box' + active + '"><h4><span>Runde ' + (i + 1) + ': ' + RNAMES[i] + '</span><span style="color:#4ade80;">+' + Math.round(RATES[i] * 100) + '%</span></h4>' + body + '</div>';
+    }
+    $('tracker').innerHTML = html;
+  }
+
+  function banner(t) { $('bannerMsg').textContent = t; }
+
+  /* ---------- Eingaben ---------- */
+  function clampC(v) { v = parseInt(v, 10); if (isNaN(v) || v < 0) v = 0; return Math.min(v, 500); }
+  function adj(i, d) { if (S.phase !== 'harvest' || S.over) return; S.catches[i] = clampC(S.catches[i] + d); render(); }
+  function setC(i, v) { if (S.phase !== 'harvest' || S.over) return; S.catches[i] = clampC(v); render(); }
+  function toggleLock(i) { S.locked[i] = !S.locked[i]; render(); }
+
+  function toggleSecretMode() { secret = !secret; render(); }
+
+  function setCustomFish() {
+    let v = parseInt($('initFishInput').value, 10);
+    if (isNaN(v)) v = 50;
+    v = Math.max(5, Math.min(500, v));
+    $('initFishInput').value = v;
+    S = newState(v);
+    stopTimer();
+    fishes = [];
+    startBanner();
+    render();
+  }
+
+  function resetGame() {
+    if (!confirm('Spiel wirklich neu starten?')) return;
+    setCustomFish();
+  }
+
+  function startBanner() {
+    banner('Runde ' + S.round + ': Gruppen überlegen ihren Fang. Timer starten oder Fangmengen direkt eintragen!');
+  }
+
+  /* ---------- Spiellogik ---------- */
+  function runRoundAction() {
+    if (S.over) return;
+    if (S.phase === 'harvest') harvest(); else nextRound();
+  }
+
+  function harvest() {
+    stopTimer();
+    const demand = sum(S.catches);
+    const start = S.pool;
+    let actual = S.catches.slice();
+
+    if (demand > S.pool) {
+      // Nicht genug Fische: anteilig verteilen (größte Reste zuerst)
+      const exact = S.catches.map(c => c * S.pool / demand);
+      actual = exact.map(Math.floor);
+      let rest = S.pool - sum(actual);
+      const order = exact.map((e, i) => ({ i: i, fr: e - Math.floor(e) })).sort((a, b) => b.fr - a.fr);
+      for (let k = 0; k < order.length && rest > 0; k++) {
+        if (actual[order[k].i] < S.catches[order[k].i]) { actual[order[k].i]++; rest--; }
+      }
+    }
+
+    const caught = sum(actual);
+    for (let i = 0; i < 5; i++) S.totals[i] += actual[i];
+    S.pool -= caught;
+    const afterCatch = S.pool;
+
+    let born = 0;
+    if (S.pool > 0) {
+      born = Math.round(S.pool * RATES[S.round - 1]);
+      born = Math.min(born, S.max - S.pool);
+      S.pool += born;
+    }
+
+    S.hist.push({ start: start, demand: demand, caught: caught, afterCatch: afterCatch, born: born, end: S.pool, actual: actual });
+    S.phase = 'next';
+
+    let msg = 'Runde ' + S.round + ' beendet: ' + caught + ' Fische gefangen';
+    if (demand > start) msg += ' (Wunsch ' + demand + ' > Bestand ' + start + ', anteilig gekürzt)';
+    msg += secret ? '.' : ', ' + born + ' neue geboren.';
+
+    if (S.pool === 0) {
+      S.over = true; S.collapsed = true;
+      msg = '💀 Der Bestand ist zusammengebrochen! Es gibt keine Fische mehr.';
+    } else if (S.round === 3) {
+      S.over = true;
+      msg = '🏁 Letzte Runde beendet. ' + (secret ? '' : 'Es leben noch ' + S.pool + ' Fische im Teich.');
+    }
+    banner(msg);
+    render();
+    if (S.over) showResults();
+  }
+
+  function nextRound() {
+    S.round++;
+    S.phase = 'harvest';
+    S.catches = [0, 0, 0, 0, 0];
+    S.locked = [false, false, false, false, false];
+    startBanner();
+    render();
+  }
+
+  function showResults() {
+    const total = sum(S.totals);
+    const rank = S.totals.map((t, i) => ({ i: i, t: t })).sort((a, b) => b.t - a.t);
+    $('resTitle').textContent = S.collapsed ? '💀 Die Allmende ist zusammengebrochen' : '🏁 Ergebnis nach 3 Runden';
+    $('resText').textContent = S.collapsed
+      ? 'Alle zusammen haben ' + total + ' Fische gefangen, dann war der Teich leer. Individuell vernünftig, gemeinsam katastrophal.'
+      : 'Gesamtfang: ' + total + ' Fische. Im Teich leben noch ' + S.pool + ' von ' + S.max + ' Fischen. Wie nachhaltig war eure Entscheidung?';
+    $('resRank').innerHTML = rank.map((r, k) =>
+      '<div class="rank-row"><span>' + (k + 1) + '. <span style="color:' + COLORS[r.i] + '">Gruppe ' + (r.i + 1) + '</span></span><span>' + r.t + ' 🐟</span></div>'
+    ).join('');
+    $('resultModal').classList.add('active');
+  }
+
+  /* ---------- Timer ---------- */
+  let tLeft = 60, tInt = null;
+  function updateTimerUI() {
+    const el = $('hostTimer');
+    el.textContent = '⏱️ ' + tLeft + 's';
+    el.classList.toggle('alarm', tLeft === 0);
+    $('timerBtn').textContent = tInt ? '⏸️ Timer stoppen' : '⏱️ 60s-Timer starten';
+  }
+  function beep() {
+    try {
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.frequency.value = 880; g.gain.value = 0.15;
+      o.start(); o.stop(ac.currentTime + 0.6);
+    } catch (e) {}
+  }
+  function startTimer() {
+    stopTimer(true);
+    tLeft = 60;
+    tInt = setInterval(() => {
+      tLeft--;
+      if (tLeft <= 0) {
+        tLeft = 0; clearInterval(tInt); tInt = null; beep();
+        banner('⏰ Zeit abgelaufen! Fangmengen eintragen und "Fang ausführen" klicken.');
+      }
+      updateTimerUI();
+    }, 1000);
+    updateTimerUI();
+  }
+  function stopTimer(keep) {
+    if (tInt) { clearInterval(tInt); tInt = null; }
+    if (!keep) { tLeft = 60; }
+    updateTimerUI();
+  }
+  function toggleTimer() { if (tInt) stopTimer(); else startTimer(); }
+
+  /* ---------- QR-Codes ---------- */
+  function baseUrl() { return location.origin + location.pathname; }
+  function toggleQR(show) {
+    if (show) {
+      const base = baseUrl();
+      $('qrWarn').style.display = location.protocol === 'file:' ? 'block' : 'none';
+      let h = '';
+      for (let i = 1; i <= 5; i++) {
+        const url = base + '?g=' + i;
+        const src = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(url);
+        h += '<div class="qr-item"><strong style="color:' + COLORS[i - 1] + '">Gruppe ' + i + '</strong><br><img src="' + src + '" alt="QR Gruppe ' + i + '"></div>';
+      }
+      $('qrGrid').innerHTML = h;
+    }
+    $('qrModal').classList.toggle('active', !!show);
+  }
+
+  /* ---------- Fisch-Animation ---------- */
+  const cv = $('arenaCanvas');
+  const ctx = cv.getContext('2d');
+  let fishes = [];
+
+  function mkFish() {
+    const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * (PR - 15);
+    const dir = Math.random() * Math.PI * 2, sp = 0.4 + Math.random() * 0.9;
+    return { x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, vx: Math.cos(dir) * sp, vy: Math.sin(dir) * sp,
+             s: 0.8 + Math.random() * 0.7, hue: 20 + Math.random() * 40 };
+  }
+  function syncFish() {
+    let n;
+    if (S.pool === 0) n = 0;
+    else if (revealed()) n = Math.min(S.pool, 150);
+    else n = 25; // geheim: feste Anzeige, verrät den Bestand nicht
+    while (fishes.length < n) fishes.push(mkFish());
+    if (fishes.length > n) fishes.length = n;
+  }
+  function loop() {
+    ctx.clearRect(0, 0, 980, 640);
+    for (const f of fishes) {
+      f.x += f.vx; f.y += f.vy;
+      const dx = f.x - CX, dy = f.y - CY, d = Math.hypot(dx, dy);
+      if (d > PR) {
+        const nx = dx / d, ny = dy / d, dot = f.vx * nx + f.vy * ny;
+        if (dot > 0) { f.vx -= 2 * dot * nx; f.vy -= 2 * dot * ny; }
+        f.x = CX + nx * PR; f.y = CY + ny * PR;
+      }
+      if (Math.random() < 0.01) { f.vx += (Math.random() - 0.5) * 0.4; f.vy += (Math.random() - 0.5) * 0.4; }
+      const sp = Math.hypot(f.vx, f.vy);
+      if (sp > 1.4) { f.vx *= 1.4 / sp; f.vy *= 1.4 / sp; }
+      if (sp < 0.3) { f.vx *= 1.5; f.vy *= 1.5; }
+
+      ctx.save();
+      ctx.translate(f.x, f.y);
+      ctx.rotate(Math.atan2(f.vy, f.vx));
+      ctx.scale(f.s, f.s);
+      ctx.fillStyle = 'hsl(' + f.hue + ',90%,60%)';
+      ctx.beginPath(); ctx.ellipse(0, 0, 8, 4.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(-14, -5); ctx.lineTo(-14, 5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath(); ctx.arc(4, -1, 1.1, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  /* ---------- Handy-Ansicht ---------- */
+  let phVal = 0, phGroup = 1;
+  function phSet(v) { phVal = clampC(v); $('phInput').value = phVal; $('phMsg').textContent = ''; }
+  function phAdj(d) { phSet(phVal + d); }
+  function phConfirm() {
+    $('phMsg').innerHTML = '✅ Eure Zahl: ' + phVal + ' 🐟<br><span style="font-size:14px;color:#94a3b8;">Nennt sie jetzt dem Host.</span>';
+  }
+
+  /* ---------- Start ---------- */
+  (function init() {
+    const g = parseInt(new URLSearchParams(location.search).get('g'), 10);
+    if (g >= 1 && g <= 5) {
+      phGroup = g;
+      $('hostView').style.display = 'none';
+      $('phoneView').style.display = 'block';
+      $('phTitle').textContent = 'Gruppe ' + g;
+      $('phTitle').style.color = COLORS[g - 1];
+      document.title = 'Gruppe ' + g + ' – Fischerei';
+      return;
+    }
+    startBanner();
+    updateTimerUI();
+    render();
+    loop();
+  })();
+</script>
+</body>
+</html>
