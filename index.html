@@ -53,6 +53,13 @@
     .basket-header { font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; margin-bottom: 2px; }
     .basket-icons { font-size: 14px; line-height: 1.25; word-break: break-all; max-height: 36px; overflow-y: auto; }
 
+    .ranking { max-width: 980px; margin: 0 auto 14px; padding: 0 10px; }
+    .rank-panel { background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 12px 16px; }
+    .rank-panel h3 { font-size: 15px; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .rk-row { display: grid; grid-template-columns: 40px 90px 1fr 250px; align-items: center; gap: 10px; padding: 5px 0; font-size: 14px; }
+    .rk-bar { height: 14px; background: #0f172a; border-radius: 99px; overflow: hidden; }
+    .rk-fill { height: 100%; border-radius: 99px; }
+    .rk-rounds { font-size: 12px; color: #94a3b8; text-align: right; white-space: nowrap; }
     .tracker-grid { max-width: 980px; margin: 0 auto 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 10px; }
     .round-box { background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 10px 14px; font-size: 13px; line-height: 1.5; }
     .round-box.active { border-color: #38bdf8; background: #172554; }
@@ -116,6 +123,13 @@
       <div class="team-card pos-3" id="card-3"></div>
       <div class="team-card pos-4" id="card-4"></div>
       <div class="team-card pos-5" id="card-5"></div>
+    </div>
+
+    <div class="ranking">
+      <div class="rank-panel">
+        <h3><span>🏆 Ranking</span><span style="font-size:12px; color:#94a3b8; font-weight:600;">nach Gesamtfang</span></h3>
+        <div id="rankList"></div>
+      </div>
     </div>
 
     <div class="tracker-grid" id="tracker"></div>
@@ -242,6 +256,15 @@
 
   function revealed() { return !secret || S.over; }
   function sum(a) { return a.reduce((x, y) => x + y, 0); }
+
+  // Ranking nach Gesamtfang; gleiche Summe = gleicher Platz
+  const MEDALS = ['🥇', '🥈', '🥉'];
+  function computeRank(tots) {
+    const arr = tots.map((t, i) => ({ i: i, t: t })).sort((a, b) => b.t - a.t || a.i - b.i);
+    arr.forEach((r, k) => { r.place = (k > 0 && arr[k - 1].t === r.t) ? arr[k - 1].place : k + 1; });
+    return arr;
+  }
+  function medal(p) { return MEDALS[p - 1] || (p + '.'); }
   function editable() { return ['ready', 'running', 'collect'].indexOf(S.phase) >= 0 && !S.over; }
 
   /* ---------- Snapshot für die Handys ---------- */
@@ -302,6 +325,7 @@
     renderInit();
     renderCards();
     renderTracker();
+    renderRanking();
     renderAction();
     if (!quiet) { syncFish(); schedulePublish(); }
   }
@@ -355,6 +379,21 @@
         '<div class="team-basket"><div class="basket-header"><span>🧺 Korb</span><strong style="color:#e2e8f0;">' + tot + ' gesamt</strong></div>' +
         '<div class="basket-icons">' + icons + '</div></div>';
     }
+  }
+
+  function renderRanking() {
+    // während der Fang-Animation zählt der Live-Stand mit
+    const tots = S.totals.map((t, i) => t + (anim ? anim.tot[i] : 0));
+    const any = sum(tots) > 0;
+    const max = Math.max(1, ...tots);
+    $('rankList').innerHTML = computeRank(tots).map(r => {
+      const rounds = [0, 1, 2].map(k => 'R' + (k + 1) + ' ' + (S.hist[k] ? S.hist[k].actual[r.i] : '–')).join(' · ');
+      return '<div class="rk-row">' +
+        '<span style="font-size:20px;text-align:center;">' + (any ? medal(r.place) : '–') + '</span>' +
+        '<strong style="color:' + COLORS[r.i] + '">Gruppe ' + (r.i + 1) + '</strong>' +
+        '<div class="rk-bar"><div class="rk-fill" style="width:' + (r.t / max * 100) + '%;background:' + COLORS[r.i] + '"></div></div>' +
+        '<span class="rk-rounds"><b style="color:#f8fafc;font-size:15px;">' + r.t + ' 🐟</b> &nbsp; ' + rounds + '</span></div>';
+    }).join('');
   }
 
   function renderTracker() {
@@ -575,13 +614,13 @@
 
   function showResults() {
     const total = sum(S.totals);
-    const rank = S.totals.map((t, i) => ({ i: i, t: t })).sort((a, b) => b.t - a.t);
+    const rank = computeRank(S.totals);
     $('resTitle').textContent = S.collapsed ? '💀 Die Allmende ist zusammengebrochen' : '🏁 Ergebnis nach 3 Runden';
     $('resText').textContent = S.collapsed
       ? 'Alle zusammen haben ' + total + ' Fische gefangen, dann war der Teich leer. Individuell vernünftig, gemeinsam katastrophal.'
       : 'Gesamtfang: ' + total + ' Fische. Im Teich leben noch ' + S.pool + ' von ' + S.max + ' Fischen. Wie nachhaltig war eure Entscheidung?';
     $('resRank').innerHTML = rank.map((r, k) =>
-      '<div class="rank-row"><span>' + (k + 1) + '. <span style="color:' + COLORS[r.i] + '">Gruppe ' + (r.i + 1) + '</span></span><span>' + r.t + ' 🐟</span></div>'
+      '<div class="rank-row"><span>' + medal(r.place) + ' <span style="color:' + COLORS[r.i] + '">Gruppe ' + (r.i + 1) + '</span></span><span>' + r.t + ' 🐟</span></div>'
     ).join('');
     $('resultModal').classList.add('active');
   }
@@ -823,7 +862,8 @@
     } else if (ST.last) {
       const l = ST.last;
       msg = 'Runde ' + l.round + ' ausgewertet:<br>Gewünscht <b>' + l.asked[g] + '</b> · Gefangen <b style="color:#4ade80;">' + l.actual[g] + '</b> 🐟<br>' +
-            'Dein Korb gesamt: <b>' + ST.totals[g] + '</b> 🐟';
+            'Dein Korb gesamt: <b>' + ST.totals[g] + '</b> 🐟<br>' +
+            '🏆 Platz <b>' + computeRank(ST.totals).find(r => r.i === g).place + '</b> von 5';
       if (ST.pool !== null && l.start !== null) msg += '<br><span style="font-size:14px;color:#94a3b8;">Teich: ' + l.start + ' → ' + l.end + ' Fische</span>';
       if (ST.collapsed) msg += '<br><span style="color:#f87171;">💀 Der Bestand ist zusammengebrochen!</span>';
       else if (ST.over) msg += '<br><span style="color:#38bdf8;">Danke fürs Mitspielen!</span>';
