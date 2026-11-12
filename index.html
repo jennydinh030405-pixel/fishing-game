@@ -91,6 +91,10 @@
 
     #phoneView { display: none; padding: 0 12px; }
     .phone-view { max-width: 420px; margin: 20px auto; background: #1e293b; border-radius: 20px; padding: 22px 14px; text-align: center; border: 2px solid #38bdf8; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
+    .speech { position: relative; margin: 10px auto 4px; max-width: 300px; background: #fff; color: #0f172a; border-radius: 14px; padding: 10px 14px; font-size: 15px; font-weight: 700; line-height: 1.4; text-align: center; box-shadow: 0 3px 10px rgba(0,0,0,.35); }
+    .speech::before { content: ""; position: absolute; top: -9px; left: 50%; margin-left: -9px; border: 9px solid transparent; border-top: 0; border-bottom-color: #fff; }
+    .speech.lead { background: #fef3c7; }
+    .speech.chase { background: #fee2e2; }
     .mandate { margin-top: 10px; background: #0f172a; border: 1px solid #f59e0b; border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 1.5; color: #fde68a; text-align: left; }
     .ctrl-row { display: flex; justify-content: center; align-items: center; gap: 7px; margin: 16px 0 8px; }
     .btn-step { width: 42px; height: 48px; font-size: 16px; background: #334155; color: white; border-radius: 12px; }
@@ -121,6 +125,7 @@
         <input type="number" id="initFishInput" value="50" min="5" max="500" style="width:62px; padding:5px;">
         <button class="btn-ghost" onclick="setPool()">Bestand setzen</button>
         <button class="btn-primary" onclick="toggleQR(true)">📱 5 QR-Codes</button>
+        <button id="secretBtn" class="btn-ghost" onclick="toggleSecret()">🙈 Geheimmodus: AN</button>
         <button class="btn-primary" onclick="openManual()">✏️ Fänge manuell</button>
         <button id="gameBtn" class="btn-amber" onclick="switchGame()">🎮 Spiel 2 starten</button>
         <button id="actionBtn" class="btn-green" onclick="runRoundAction()">⏱️ Runde 1: Timer starten</button>
@@ -163,6 +168,15 @@
   </div>
 
   <!-- QR-MODAL -->
+  <div class="modal" id="confirmModal" style="z-index:300;">
+    <div class="modal-box" style="max-width:520px;">
+      <p id="confirmText" style="font-size:17px; line-height:1.5; white-space:pre-line; margin:0 0 20px;"></p>
+      <div style="display:flex; gap:12px; justify-content:center;">
+        <button class="btn-primary" id="confirmNo" style="padding:10px 22px; background:#475569;">Abbrechen</button>
+        <button class="btn-primary" id="confirmYes" style="padding:10px 22px;">Ja, weiter</button>
+      </div>
+    </div>
+  </div>
   <div class="modal" id="qrModal">
     <div class="modal-box">
       <h2>📱 QR-Codes für die Firmen</h2>
@@ -220,6 +234,7 @@
     <div class="phone-view">
       <h2 id="phTitle">Firma 1</h2>
       <canvas id="phChar" width="170" height="150" style="display:block; margin:2px auto 0;"></canvas>
+      <div id="phSpeech" class="speech" style="display:none;"></div>
       <div id="phConn" style="font-size:12px; color:#94a3b8; margin-top:4px;"></div>
       <div class="mandate" id="phMandate">
         📜 <b>Auftrag:</b> Maximiert den Gewinn eurer Firma.<br>
@@ -445,8 +460,10 @@
       else if (S.seen[i]) st = '📱 verbunden';
       else st = '⏳ noch nicht verbunden';
       const maskPh = (S.catches[i] > 0 || S.submitted[i] !== null) ? '✔' : '–';
-      const input = ed
+      const input = (ed && SECRET)
         ? '<input type="password" inputmode="numeric" autocomplete="off" value="" placeholder="' + maskPh + '" style="width:54px;height:26px;font-size:15px;" onchange="setC(' + i + ',this.value)">'
+        : ed
+        ? '<input type="number" value="' + S.catches[i] + '" min="0" max="' + MAXIN + '" style="width:54px;height:26px;font-size:15px;" onchange="setC(' + i + ',this.value)">'
         : '<input type="number" value="' + (S.catches[i]) + '" disabled style="width:54px;height:26px;font-size:15px;">';
       card.innerHTML =
         '<div class="team-title"><span style="color:' + COLORS[i] + '">Firma ' + (i + 1) + '</span><span>' + (S.viol[i] ? '<span style="color:#f87171;font-size:12px;">⚠️×' + S.viol[i] + '</span> ' : '') + (S.locked[i] ? '🔒' : '') + '</span></div>' +
@@ -524,6 +541,19 @@
   }
 
   /* ---------- Manuelle Eingabe (Notfall, falls Handys oder Sync nicht gehen) ---------- */
+  // Geheimmodus: eingegebene Fänge sind auf dem Host-Bildschirm verborgen, solange eingegeben wird. Bestand bleibt immer sichtbar.
+  let SECRET = true;
+  try { SECRET = localStorage.getItem('fischSecret') !== '0'; } catch (e) {}
+  function updateSecretBtn() {
+    const b = $('secretBtn');
+    b.textContent = SECRET ? '🙈 Geheimmodus: AN' : '👁️ Zeigmodus: Eingaben sichtbar';
+    b.className = SECRET ? 'btn-ghost' : 'btn-amber';
+  }
+  function toggleSecret() {
+    SECRET = !SECRET;
+    try { localStorage.setItem('fischSecret', SECRET ? '1' : '0'); } catch (e) {}
+    updateSecretBtn(); render(); refreshManual();
+  }
   function openManual() { $('manualModal').classList.add('active'); buildManual(); }
   function closeManual() { $('manualModal').classList.remove('active'); }
   function buildManual() {
@@ -545,8 +575,9 @@
     const ed = editable();
     for (let i = 0; i < 5; i++) {
       const inp = $('man-' + i);
-      if (document.activeElement !== inp) inp.value = S.catches[i];
+      if (document.activeElement !== inp) { inp.value = (SECRET && ed) ? '' : S.catches[i]; inp.placeholder = (SECRET && ed && (S.catches[i] > 0 || S.submitted[i] !== null)) ? '✔' : ''; }
       inp.disabled = !ed;
+      inp.type = (SECRET && ed) ? 'password' : 'number';
       inp.style.color = S.catches[i] > LIMIT ? '#f87171' : '#38bdf8';
       document.querySelectorAll('#manRows .man-row:nth-child(' + (i + 1) + ') button').forEach(b => { b.disabled = !ed; });
       $('mansrc-' + i).textContent = S.manual[i] ? '✏️ manuell (🔒)' : (S.submitted[i] !== null ? '📱 vom Handy' : '–');
@@ -585,9 +616,18 @@
     render();
   }
   // Ausgewertete Runde zurücknehmen, die Eingaben bleiben stehen und können korrigiert werden
+  function askConfirm(q, fn) {
+    $('confirmText').textContent = q;
+    const m = $('confirmModal');
+    m.classList.add('active');
+    $('confirmNo').onclick = function () { m.classList.remove('active'); };
+    $('confirmYes').onclick = function () { m.classList.remove('active'); fn(); };
+  }
   function undoHarvest() {
     if (S.phase !== 'done' || anim || !S.hist.length) return;
-    if (!confirm('Auswertung von Runde ' + S.round + ' rückgängig machen? Die Eingaben bleiben erhalten. Du kannst sie korrigieren und den Fang danach erneut ausführen.')) return;
+    askConfirm('Auswertung von Runde ' + S.round + ' rückgängig machen? Die Eingaben bleiben erhalten. Du kannst sie korrigieren und den Fang danach erneut ausführen.', undoHarvestDo);
+  }
+  function undoHarvestDo() {
     const h = S.hist.pop();
     S.pool = S.snap.pool;
     S.totals = S.snap.totals.slice();
@@ -627,7 +667,9 @@
     const q = executed
       ? 'Runde ' + S.round + ' zurücksetzen? Das Ergebnis dieser Runde wird rückgängig gemacht, der See und die Körbe gehen auf den Stand vor der Runde zurück.'
       : 'Runde ' + S.round + ' zurücksetzen? Alle Eingaben dieser Runde werden gelöscht und der Timer gestoppt. Frühere Runden bleiben erhalten.';
-    if (!confirm(q)) return;
+    askConfirm(q, function () { resetRoundDo(executed); });
+  }
+  function resetRoundDo(executed) {
     stopTimer();
     if (executed) {
       S.hist.length = S.round - 1;
@@ -647,8 +689,7 @@
   // Alles zurück auf Runde 1
   function resetGame() {
     if (S.phase === 'animating') return;
-    if (!confirm('GANZES Spiel zurücksetzen? Alle Runden, Fänge und Körbe gehen verloren. (Nur die aktuelle Runde zurücksetzen: Button "Runde zurücksetzen".)')) return;
-    newGame(S.init);
+    askConfirm('GANZES Spiel zurücksetzen? Alle Runden, Fänge und Körbe gehen verloren. (Nur die aktuelle Runde zurücksetzen: Button "Runde zurücksetzen".)', function () { newGame(S.init); });
   }
   function setPool() {
     const el = $('initFishInput');
@@ -656,7 +697,7 @@
     if (isNaN(v)) v = S.init;
     v = Math.max(5, Math.min(500, v));
     el.value = v;
-    if ((S.hist.length > 0 || S.phase !== 'ready') && !confirm('Den Start-Bestand zu ändern setzt das GANZE Spiel zurück. Fortfahren?')) return;
+    if (S.hist.length > 0 || S.phase !== 'ready') { askConfirm('Den Start-Bestand zu ändern setzt das GANZE Spiel zurück. Fortfahren?', function () { newGame(v); }); return; }
     newGame(v);
   }
   function newGame(v) {
@@ -892,18 +933,19 @@
   }
   function switchGame() {
     if (S.phase === 'animating') return;
-    const init = S.init, seen = S.seen;
     if (S.game === 1) {
       const q = 'Spiel 2 starten?\n\n' + (S.over ? '' : 'Spiel 1 ist noch nicht beendet. ') +
-        'Das Ergebnis von Spiel 1 wird gespeichert. Spiel 2 beginnt mit neuem Scoreboard und vollem See (' + init + ' Fische). Die Firmen kennen jetzt die Regel und dürfen miteinander reden.';
-      if (!confirm(q)) return;
-      G1 = S.hist.length ? summarize(S) : null;
-      S = newState(init, 2);
+        'Das Ergebnis von Spiel 1 wird gespeichert. Spiel 2 beginnt mit neuem Scoreboard und vollem See (' + S.init + ' Fische). Die Firmen kennen jetzt die Regel und dürfen miteinander reden.';
+      askConfirm(q, function () { doSwitch(2); });
     } else {
-      if (!confirm('Zurück zu Spiel 1? Das gespeicherte Ergebnis von Spiel 1 und alle Daten von Spiel 2 gehen verloren.')) return;
-      G1 = null;
-      S = newState(init, 1);
+      askConfirm('Zurück zu Spiel 1? Das gespeicherte Ergebnis von Spiel 1 und alle Daten von Spiel 2 gehen verloren.', function () { doSwitch(1); });
     }
+  }
+  function doSwitch(g) {
+    if (S.phase === 'animating') return;
+    const init = S.init, seen = S.seen;
+    if (g === 2) { G1 = S.hist.length ? summarize(S) : null; } else { G1 = null; }
+    S = newState(init, g);
     S.seen = seen;
     stopTimer(); anim = null; fishes = [];
     $('resultModal').classList.remove('active');
@@ -1424,6 +1466,46 @@
     }
   }
 
+  // Sprechblase der Figur auf dem Handy: Rang, Abstand, Druck
+  function phSpeech() {
+    const el = $('phSpeech');
+    if (!ST || ST.over || ST.phase === 'animating' || ST.phase === 'talk') { el.style.display = 'none'; return; }
+    const g = PHONE_G - 1, tots = ST.totals || [0, 0, 0, 0, 0];
+    const rank = computeRank(tots), me = rank.find(r => r.i === g), place = me.place;
+    const rounds = ST.rounds || ROUNDS;
+    const pick = a => a[(ST.round * 3 + g) % a.length];
+    const lastRound = ST.round >= rounds && ST.phase !== 'done';
+    let t = '', cls = '';
+    if (ST.game === 2) {
+      t = pick(['Wir wollen, dass alle überleben. Redet miteinander! 🤝', 'Der See und jede Firma zählen. Einigt euch! 🌊']);
+    } else if (ST.last && ST.last.dead) {
+      t = '💀 Oje, der See ist leer … Das war zu gierig!';
+    } else if (!ST.last) {
+      t = pick(['Alle starten bei null. Wer holt sich Platz 1? 🥇', 'Los geht’s! Wir wollen ganz nach oben! 🚀']);
+    } else if (tots.every(v => v === tots[0])) {
+      t = pick(['Alle gleichauf. Wer traut sich mehr? 🥇', 'Noch nichts entschieden. Zeigt, was ihr könnt! 💪']);
+    } else if (place === 1) {
+      const second = rank.find(r => r.place > 1), lead = second ? (tots[g] - second.t) : 0;
+      cls = 'lead';
+      t = lead === 0 ? '🥇 Wir sind Erste, aber gleichauf! Jetzt nicht nachlassen!'
+        : pick(['🥇 Wir sind auf Platz 1! Nur ' + eur(lead) + ' Vorsprung – die anderen jagen uns! 🏃',
+                '🥇 Platz 1! Verteidigt die Spitze, sonst überholen sie uns! 🔥',
+                '🥇 Wir führen mit ' + eur(lead) + '. Bloß nicht verlieren!']);
+    } else {
+      const lead = rank[0].t, ahead = rank.filter(r => r.t > tots[g]).sort((a, b) => a.t - b.t)[0];
+      const gapTop = lead - tots[g], gapNext = ahead ? ahead.t - tots[g] : 0;
+      cls = 'chase';
+      if (place === 2) t = pick(['🥈 Platz 2! Nur ' + eur(gapTop) + ' bis zur Spitze – das holen wir uns! 💪',
+                                  '🥈 Wir sind Zweite. Jetzt angreifen und Platz 1 holen! 🔥']);
+      else if (place === 5 || place >= 4) t = pick(['😬 Platz ' + place + '! Wir liegen ' + eur(gapNext) + ' hinter der nächsten Firma. Aufholen!',
+                                                   '😤 Wir sind fast ganz hinten. Das lassen wir nicht auf uns sitzen!']);
+      else t = pick(['Platz ' + place + '! Noch ' + eur(gapNext) + ' bis zum nächsten Platz. Weiter!',
+                     'Wir sind Platz ' + place + '. Die anderen sind in Reichweite! 🎯']);
+    }
+    if (lastRound && ST.game !== 2 && !(ST.last && ST.last.dead)) t = '⏰ LETZTE RUNDE! ' + t;
+    el.className = 'speech ' + cls; el.textContent = t; el.style.display = 'block';
+  }
+
   function phRender() {
     const g = PHONE_G - 1;
     const stale = !!ST && Date.now() - lastMsg > 10000;
@@ -1433,6 +1515,7 @@
       $('phStock').textContent = '';
       $('phControls').style.display = 'none';
       $('phMsg').innerHTML = '';
+      $('phSpeech').style.display = 'none';
       phTimer();
       return;
     }
@@ -1496,6 +1579,7 @@
       else if (ST.over) msg += '<br><span style="color:#38bdf8;">Danke fürs Mitspielen!</span>';
     }
     $('phMsg').innerHTML = msg;
+    phSpeech();
     phTimer();
   }
 
@@ -1511,6 +1595,7 @@
 
   /* ================= Start ================= */
   (function init() {
+    updateSecretBtn();
     bgResize();
     window.addEventListener('resize', bgResize);
     if (IS_PHONE) {
