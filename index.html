@@ -100,6 +100,7 @@
     .pcard { border: 3px dashed #94a3b8; border-radius: 14px; padding: 12px; text-align: center; color: #0f172a; break-inside: avoid; }
     .pcard h2 { margin: 0; font-size: 34px; }
     .pcard img { width: 100%; max-width: 280px; }
+    .pcard .pwarn { color: #dc2626; font-weight: 800; font-size: 17px; line-height: 1.3; margin-top: 8px; }
     .pcard small { color: #475569; display: block; margin-top: 4px; }
     @media print {
       body > *:not(#printView) { display: none !important; }
@@ -117,6 +118,15 @@
 <body>
 
   <canvas id="bgCanvas"></canvas>
+  <div id="pwGate" style="display:none; position:fixed; inset:0; z-index:1000; background:#0b192c; align-items:center; justify-content:center; padding:20px;">
+    <div class="modal-box" style="max-width:340px;">
+      <div style="font-size:44px;">🔐</div>
+      <h2 style="margin:6px 0 12px;">Host-Zugang</h2>
+      <input type="password" id="pwInput" inputmode="numeric" autocomplete="off" placeholder="Passwort" style="width:100%; padding:12px; font-size:20px; text-align:center; border-radius:10px; border:2px solid #475569; background:#0f172a; color:#fff;" onkeydown="if(event.key==='Enter')tryUnlock()">
+      <div id="pwErr" style="color:#f87171; min-height:22px; margin:8px 0; font-weight:700;"></div>
+      <button class="btn-green" style="width:100%; padding:12px; font-size:16px;" onclick="tryUnlock()">Eintreten</button>
+    </div>
+  </div>
 
   <!-- HOST-ANSICHT (Beamer) -->
   <div id="hostView">
@@ -1021,7 +1031,7 @@
     for (let i = 1; i <= 5; i++) {
       const url = baseUrl() + '?room=' + PRINT_ROOM + '&g=' + i;
       const src = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=8&data=' + encodeURIComponent(url);
-      h += '<div class="pcard"><h2 style="color:' + ['#b91c1c', '#b45309', '#15803d', '#0369a1', '#7e22ce'][i - 1] + '">Firma ' + i + '</h2><img src="' + src + '" alt="QR Firma ' + i + '"><small>Scannen und einmal öffnen lassen</small></div>';
+      h += '<div class="pcard"><h2 style="color:' + ['#b91c1c', '#b45309', '#15803d', '#0369a1', '#7e22ce'][i - 1] + '">Firma ' + i + '</h2><img src="' + src + '" alt="QR Firma ' + i + '"><small>Scannen und einmal öffnen lassen</small><div class="pwarn">Nur ein Gerät pro Team – keine zweite Anmeldung!</div></div>';
     }
     $('printGrid').innerHTML = h;
     $('printView').style.display = 'block';
@@ -1654,7 +1664,7 @@
   }
 
   /* ================= Start ================= */
-  (function init() {
+  function init() {
     updateSecretBtn();
     if (!IS_PHONE) updateRoomBadge();
     bgResize();
@@ -1702,7 +1712,24 @@
       (ok, why) => {
         $('connBadge').textContent = why === 'lib' ? '❌ Live-Bibliothek fehlt' : (ok ? '📡 Live verbunden' : '📡 verbinde …');
       });
-  })();
+  }
+
+  // Host-Passwort (einfache Sperre gegen versehentliches Öffnen, kein echter Schutz)
+  const HOST_PW = '9999';
+  function hostUnlocked() { try { return sessionStorage.getItem('fischHostOk') === '1'; } catch (e) { return false; } }
+  function tryUnlock() {
+    const v = $('pwInput').value.trim();
+    if (v === HOST_PW) {
+      try { sessionStorage.setItem('fischHostOk', '1'); } catch (e) {}
+      $('pwGate').style.display = 'none';
+      init();
+    } else {
+      $('pwErr').textContent = '❌ Falsches Passwort';
+      $('pwInput').value = ''; $('pwInput').focus();
+    }
+  }
+  if (IS_PHONE || !FIXED_ROOM || hostUnlocked()) init();   // Passwort nur beim Host-Link (?room=…)
+  else { $('pwGate').style.display = 'flex'; setTimeout(() => $('pwInput').focus(), 50); }
 </script>
 </body>
 </html>
