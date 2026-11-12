@@ -1444,6 +1444,9 @@
   }
   function phConfirm() {
     if (!phCanEdit()) return;
+    phDoSend();
+  }
+  function phDoSend() {
     pending = { v: phVal, tries: 0 };
     phSendNow();
     phRender();
@@ -1531,7 +1534,7 @@
     const can = phCanEdit();
     document.querySelectorAll('#phControls button, #phControls input').forEach(e => { e.disabled = !can; });
     if (document.activeElement !== $('phInput')) $('phInput').value = phVal;
-    $('phWarn').textContent = (showCtl && phVal > LIMIT) ? '⚠️ Über dem Limit von ' + LIMIT + '! Das wäre illegal.' : '';
+    $('phWarn').textContent = '';
 
     let msg = '';
     const s = ST.submitted[g];
@@ -1571,7 +1574,6 @@
         msg = '<span style="color:#f87171;">💀 Der See ist tot!</span><br>Alle Firmen bestellten zusammen <b>' + l.demand + '</b> Fische, im See waren nur <b>' + l.start + '</b>.<br>Niemand hat in dieser Runde etwas gefangen.';
       } else {
         msg = 'Runde ' + l.round + ' ausgewertet:<br>Bestellt <b>' + l.asked[g] + '</b> · Gefangen <b style="color:#4ade80;">' + l.actual[g] + '</b> 🐟 = ' + eur(l.actual[g]);
-        if (l.asked[g] > LIMIT) msg += '<br><span style="color:#f87171;">⚠️ Über dem Limit von ' + LIMIT + ': illegal!</span>';
       }
       msg += '<br>Dein Gewinn gesamt: <b>' + eur(ST.totals[g]) + '</b>';
       if (ST.game !== 2) msg += '<br>🏆 Platz <b>' + place + '</b> von 5';
