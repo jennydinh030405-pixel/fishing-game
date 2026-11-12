@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fischerei-Simulation: Nachhaltigkeit</title>
+  <title>Fischerei-Spiel: Spiel 1</title>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 0; }
-    body { background: #0b192c; color: #f1f5f9; min-height: 100vh; overflow-x: hidden; }
+    html { background: #0b192c; }
+    body { background: transparent; color: #f1f5f9; min-height: 100vh; overflow-x: hidden; }
+    #bgCanvas { position: fixed; top: 0; left: 0; z-index: 0; pointer-events: none; }
+    #hostView, #phoneView { position: relative; z-index: 1; }
     button { cursor: pointer; border: none; border-radius: 8px; font-weight: 700; transition: 0.15s; }
     button:hover { opacity: 0.92; transform: translateY(-1px); }
     button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
@@ -16,6 +19,7 @@
     .topbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: #1e293b; border-bottom: 2px solid #334155; flex-wrap: wrap; gap: 10px; }
     .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; }
     .badge { padding: 6px 12px; border-radius: 99px; font-weight: 700; background: #0f172a; border: 1px solid #334155; font-size: 13px; }
+    .badge.law { border-color: #f59e0b; color: #fde68a; }
     .timer-badge { padding: 6px 14px; border-radius: 99px; font-weight: 900; font-size: 16px; background: #7c2d12; color: #fed7aa; border: 2px solid #f97316; }
     .timer-badge.alarm { background: #dc2626; color: #fff; animation: blink 0.6s infinite; }
     @keyframes blink { 50% { opacity: 0.45; } }
@@ -39,6 +43,7 @@
     .team-card { position: absolute; width: 235px; background: rgba(30, 41, 59, 0.95); border: 2px solid #475569; border-radius: 14px; padding: 10px 12px; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.5); z-index: 10; transition: border-color 0.2s, box-shadow 0.2s; }
     .team-card.locked { border-color: #22c55e; box-shadow: 0 0 16px rgba(34, 197, 94, 0.35); }
     .team-card.sent { border-color: #38bdf8; box-shadow: 0 0 16px rgba(56, 189, 248, 0.4); }
+    .team-card.viol { border-color: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
     .team-card.fishing { border-color: #f97316; box-shadow: 0 0 28px rgba(249, 115, 22, 0.85); }
     .pos-1 { top: 4px; left: 490px; transform: translateX(-50%); }
     .pos-2 { top: 155px; right: 8px; }
@@ -56,16 +61,17 @@
     .ranking { max-width: 980px; margin: 0 auto 14px; padding: 0 10px; }
     .rank-panel { background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 12px 16px; }
     .rank-panel h3 { font-size: 15px; margin-bottom: 6px; display: flex; justify-content: space-between; }
-    .rk-row { display: grid; grid-template-columns: 40px 90px 1fr 250px; align-items: center; gap: 10px; padding: 5px 0; font-size: 14px; }
+    .rk-row { display: grid; grid-template-columns: 40px 90px 1fr 330px; align-items: center; gap: 10px; padding: 5px 0; font-size: 14px; }
     .rk-bar { height: 14px; background: #0f172a; border-radius: 99px; overflow: hidden; }
     .rk-fill { height: 100%; border-radius: 99px; }
-    .rk-rounds { font-size: 12px; color: #94a3b8; text-align: right; white-space: nowrap; }
-    .tracker-grid { max-width: 980px; margin: 0 auto 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 0 10px; }
-    .round-box { background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 10px 14px; font-size: 13px; line-height: 1.5; }
-    .round-box.active { border-color: #38bdf8; background: #172554; }
-    .round-box h4 { font-size: 14px; margin-bottom: 4px; color: #f8fafc; display: flex; justify-content: space-between; gap: 6px; }
+    .rk-info { font-size: 12px; color: #94a3b8; text-align: right; line-height: 1.35; }
 
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.82); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; overflow: auto; }
+    .tracker-grid { max-width: 980px; margin: 0 auto 20px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 0 10px; }
+    .round-box { background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 10px 12px; font-size: 12.5px; line-height: 1.5; }
+    .round-box.active { border-color: #38bdf8; background: #172554; }
+    .round-box h4 { font-size: 14px; margin-bottom: 4px; color: #f8fafc; }
+
+    .modal { position: fixed; inset: 0; background: rgba(11,25,44,0.55); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; overflow: auto; }
     .modal.active { display: flex; }
     .modal-box { background: #1e293b; border: 2px solid #475569; border-radius: 16px; padding: 24px; max-width: 850px; width: 100%; text-align: center; }
     .qr-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 20px 0; }
@@ -73,24 +79,40 @@
     .qr-item img { width: 120px; height: 120px; border-radius: 8px; background: white; padding: 6px; margin: 8px 0; }
     .warn { background: #7c2d12; color: #fed7aa; padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-top: 10px; }
     .rank-row { display: flex; justify-content: space-between; padding: 8px 12px; background: #0f172a; border-radius: 8px; margin: 6px 0; font-weight: 700; }
+    .man-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 7px 0; }
+    .man-row strong { width: 76px; text-align: left; }
+    .man-row input { width: 66px; height: 36px; font-size: 18px; }
+    .man-row .btn-step { width: 40px; height: 36px; font-size: 14px; }
+    .man-src { width: 120px; font-size: 12px; color: #94a3b8; text-align: left; }
+    .reveal-box { text-align: left; line-height: 1.6; color: #cbd5e1; font-size: 15px; }
+    .reveal-box p { margin: 10px 0; }
+    .reveal-box h3 { margin-top: 16px; color: #f8fafc; font-size: 16px; }
+    .reveal-box ul { margin: 6px 0 6px 22px; }
 
     #phoneView { display: none; padding: 0 12px; }
     .phone-view { max-width: 420px; margin: 20px auto; background: #1e293b; border-radius: 20px; padding: 22px 14px; text-align: center; border: 2px solid #38bdf8; box-shadow: 0 12px 30px rgba(0,0,0,0.5); }
-    .ctrl-row { display: flex; justify-content: center; align-items: center; gap: 7px; margin: 16px 0; }
+    .mandate { margin-top: 10px; background: #0f172a; border: 1px solid #f59e0b; border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 1.5; color: #fde68a; text-align: left; }
+    .ctrl-row { display: flex; justify-content: center; align-items: center; gap: 7px; margin: 16px 0 8px; }
     .btn-step { width: 42px; height: 48px; font-size: 16px; background: #334155; color: white; border-radius: 12px; }
     .phone-input { width: 88px; height: 56px; font-size: 30px; }
+    #phWarn { color: #f87171; font-weight: 800; font-size: 14px; min-height: 20px; margin-bottom: 8px; }
     #phMsg { margin-top: 16px; font-size: 17px; font-weight: 800; line-height: 1.5; min-height: 52px; }
   </style>
 </head>
 <body>
 
+  <canvas id="bgCanvas"></canvas>
+
   <!-- HOST-ANSICHT (Beamer) -->
   <div id="hostView">
     <div class="topbar">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <strong style="font-size:17px;">🐟 Fischerei-Simulation</strong>
-        <span class="badge">Runde <span id="roundNum">1</span> / 3</span>
+        <strong style="font-size:17px;">🐟 Fischerei-Spiel</strong>
+        <span class="badge">Runde <span id="roundNum">1</span> / <span id="roundMax">4</span></span>
         <span class="timer-badge" id="hostTimer">⏱️ 60s</span>
+        <span class="badge" id="gameBadge">Spiel 1: Gewinn maximieren</span>
+        <span class="badge law">⚖️ Limit: 8 Fische</span>
+        <span class="badge">💶 €1.000 pro Fisch</span>
         <span class="badge" id="connBadge">📡 verbinde …</span>
       </div>
 
@@ -98,8 +120,9 @@
         <label style="color:#94a3b8;">Start-Fische:</label>
         <input type="number" id="initFishInput" value="50" min="5" max="500" style="width:62px; padding:5px;">
         <button class="btn-ghost" onclick="setPool()">Bestand setzen</button>
-        <button id="secretBtn" class="btn-ghost" onclick="toggleSecretMode()">🔓 Modus: Offen</button>
         <button class="btn-primary" onclick="toggleQR(true)">📱 5 QR-Codes</button>
+        <button class="btn-primary" onclick="openManual()">✏️ Fänge manuell</button>
+        <button id="gameBtn" class="btn-amber" onclick="switchGame()">🎮 Spiel 2 starten</button>
         <button id="actionBtn" class="btn-green" onclick="runRoundAction()">⏱️ Runde 1: Timer starten</button>
         <button id="roundResetBtn" class="btn-amber" onclick="resetRound()">↺ Runde zurücksetzen</button>
         <button class="btn-danger" onclick="resetGame()">⟲ Ganzes Spiel zurücksetzen</button>
@@ -114,7 +137,7 @@
 
       <div class="pond-overlay">
         <div class="pond-count" id="fishCountTxt">50</div>
-        <div style="font-size:12px; font-weight:800;">FISCHE IM TEICH (MAX <span id="maxFishTxt">50</span>)</div>
+        <div style="font-size:12px; font-weight:800;">FISCHE IM SEE (MAX <span id="maxFishTxt">50</span>)</div>
         <div class="pond-zone" id="zoneTxt"></div>
       </div>
 
@@ -125,9 +148,13 @@
       <div class="team-card pos-5" id="card-5"></div>
     </div>
 
+    <div class="ranking" id="g1box" style="display:none;">
+      <div class="rank-panel" id="g1panel"></div>
+    </div>
+
     <div class="ranking">
       <div class="rank-panel">
-        <h3><span>🏆 Ranking</span><span style="font-size:12px; color:#94a3b8; font-weight:600;">nach Gesamtfang</span></h3>
+        <h3><span id="rankTitle">🏆 Ranking</span><span id="rankSub" style="font-size:12px; color:#94a3b8; font-weight:600;">nach Gewinn</span></h3>
         <div id="rankList"></div>
       </div>
     </div>
@@ -138,41 +165,81 @@
   <!-- QR-MODAL -->
   <div class="modal" id="qrModal">
     <div class="modal-box">
-      <h2>📱 QR-Codes für die Gruppen</h2>
-      <p style="color:#94a3b8; margin-top:6px; font-size:14px;">Jede Gruppe scannt ihren Code. Eingaben sind nur möglich, solange der 60-Sekunden-Timer läuft.</p>
+      <h2>📱 QR-Codes für die Firmen</h2>
+      <p style="color:#94a3b8; margin-top:6px; font-size:14px;">Jede Firma scannt ihren Code einmal. Eingaben sind nur möglich, solange der Timer läuft.</p>
       <div class="qr-grid" id="qrGrid"></div>
       <div class="warn" id="qrWarn" style="display:none;">⚠️ Die Seite ist lokal geöffnet (file://). Handys erreichen sie nur, wenn sie online ist, z. B. über GitHub Pages.</div>
       <button class="btn-primary" style="margin-top:14px;" onclick="toggleQR(false)">Schließen</button>
     </div>
   </div>
 
-  <!-- ERGEBNIS-MODAL -->
+  <!-- MANUELLE EINGABE (Notfall, falls Handys oder Verbindung nicht funktionieren) -->
+  <div class="modal" id="manualModal">
+    <div class="modal-box" style="max-width:640px;">
+      <h2>✏️ Fänge manuell eintragen</h2>
+      <p style="color:#94a3b8; margin:8px 0 4px; font-size:14px; line-height:1.5;">
+        Für den Fall, dass Handys oder Verbindung nicht funktionieren: Trage hier die Zahlen der Firmen ein, z. B. von Papierzetteln.
+        Eine manuell eingetragene Zahl sperrt die Handy-Eingabe dieser Firma.
+      </p>
+      <p style="color:#fbbf24; font-size:13px; margin-bottom:8px;">⚠️ Die Zahlen sind sichtbar, solange dieses Fenster offen ist.</p>
+      <div id="manRows"></div>
+      <div id="manExtra" style="margin-top:10px;"></div>
+      <div style="margin-top:14px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn-ghost" style="padding:10px 18px; font-size:14px;" onclick="manClear()">Alle auf 0 zurücksetzen</button>
+        <button class="btn-green" style="padding:10px 18px; font-size:14px;" onclick="closeManual()">Fertig</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ERGEBNIS- / AUFDECK-MODAL -->
   <div class="modal" id="resultModal">
     <div class="modal-box">
-      <h2 id="resTitle">🏁 Ergebnis</h2>
-      <p id="resText" style="margin:10px 0 14px; color:#cbd5e1; line-height:1.5;"></p>
-      <div id="resRank"></div>
-      <button class="btn-primary" style="margin-top:14px;" onclick="$('resultModal').classList.remove('active')">Schließen</button>
+      <div id="resMain">
+        <h2 id="resTitle">🏁 Ergebnis</h2>
+        <canvas id="podiumCanvas" width="700" height="250" style="max-width:100%; margin-top:6px;"></canvas>
+        <p id="resText" style="margin:10px 0 14px; color:#cbd5e1; line-height:1.5;"></p>
+        <div id="resRank"></div>
+        <div style="margin-top:16px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+          <button id="revealBtn" class="btn-amber" style="padding:10px 18px; font-size:14px;" onclick="showReveal(true)">🔍 Verborgene Regel aufdecken</button>
+          <button class="btn-primary" style="padding:10px 18px; font-size:14px;" onclick="$('resultModal').classList.remove('active')">Schließen</button>
+        </div>
+      </div>
+      <div id="resReveal" style="display:none;">
+        <h2 id="revTitle">🔍 Was ihr nicht wusstet</h2>
+        <div class="reveal-box" id="revBody"></div>
+        <div style="margin-top:16px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+          <button class="btn-ghost" style="padding:10px 18px; font-size:14px;" onclick="showReveal(false)">← Zurück zum Ergebnis</button>
+          <button class="btn-primary" style="padding:10px 18px; font-size:14px;" onclick="$('resultModal').classList.remove('active')">Schließen</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- HANDY-ANSICHT -->
   <div id="phoneView">
     <div class="phone-view">
-      <h2 id="phTitle">Gruppe 1</h2>
+      <h2 id="phTitle">Firma 1</h2>
+      <canvas id="phChar" width="170" height="150" style="display:block; margin:2px auto 0;"></canvas>
       <div id="phConn" style="font-size:12px; color:#94a3b8; margin-top:4px;"></div>
-      <div id="phRound" style="margin-top:10px; font-weight:800; color:#38bdf8; font-size:16px;"></div>
+      <div class="mandate" id="phMandate">
+        📜 <b>Auftrag:</b> Maximiert den Gewinn eurer Firma.<br>
+        ⚖️ <b>Gesetz:</b> Höchstens 8 Fische pro Runde.<br>
+        💶 Jeder Fisch bringt €1.000.
+      </div>
+      <div id="phRound" style="margin-top:12px; font-weight:800; color:#38bdf8; font-size:16px;"></div>
+      <div id="phStock" style="margin-top:4px; font-weight:800; color:#e2e8f0; font-size:15px;"></div>
       <div class="timer-badge" id="phTimer" style="display:inline-block; margin-top:10px;">⏱️ –</div>
 
       <div id="phControls">
-        <p style="color:#94a3b8; margin-top:16px; font-size:14px;">Wie viele Fische fangt ihr in dieser Runde?</p>
+        <p style="color:#94a3b8; margin-top:16px; font-size:14px;">Wie viele Fische fängt eure Firma in dieser Runde?</p>
         <div class="ctrl-row">
           <button class="btn-step" onclick="phAdj(-5)">−5</button>
           <button class="btn-step" onclick="phAdj(-1)">−1</button>
-          <input type="number" id="phInput" class="phone-input" value="0" min="0" max="500" onchange="phSet(this.value)">
+          <input type="number" id="phInput" class="phone-input" value="0" min="0" max="15" onchange="phSet(this.value)">
           <button class="btn-step" onclick="phAdj(1)">+1</button>
           <button class="btn-step" onclick="phAdj(5)">+5</button>
         </div>
+        <div id="phWarn"></div>
         <button class="btn-green" id="phSend" style="width:100%; padding:14px; font-size:16px;" onclick="phConfirm()">📤 Senden</button>
       </div>
 
@@ -183,11 +250,19 @@
 <script src="https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js"></script>
 <script>
   const $ = id => document.getElementById(id);
-  const RATES = [0.5, 0.25, 0.1];
-  const RNAMES = ['Hohes Wachstum', 'Mittleres Wachstum', 'Geringes Wachstum'];
   const COLORS = ['#f87171', '#fbbf24', '#4ade80', '#38bdf8', '#c084fc'];
   const CX = 490, CY = 330, PR = 150;
   const FLIGHT = 650;          // Flugzeit eines Fisches zum Team (ms)
+
+  /* ================= Spielregeln (Spiel 1) ================= */
+  const LIMIT = 8;             // gesetzliches Limit pro Firma und Runde
+  const MAXIN = 15;            // Höchstwert, den man eingeben kann (Verstoß möglich!)
+  const PRICE = 1000;          // € pro Fisch
+  const ROUNDS = 4;            // maximal 4 Runden
+  const TALK_SEC = 90;         // Verhandlung in Spiel 2
+  const ROUNDS_G2 = 3;         // Runden in Spiel 2
+  const TIMER_SEC = 60;        // Entscheidungszeit
+  function eur(fish) { return '€' + (fish * PRICE).toLocaleString('de-DE'); }
 
   /* ================= Live-Verbindung (MQTT über WebSocket) =================
      Host -> Handys: fischsim/<raum>/state (retained)
@@ -241,23 +316,23 @@
        collect    Timer vorbei, Eingabe geschlossen, Host prüft
        animating  Fang-Animation läuft
        done       Runde ausgewertet, nächste Runde wartet               */
-  let secret = false;
   let S = newState(50);
 
-  function newState(init) {
+  function newState(init, game) {
+    game = game || 1;
     return {
-      rid: randId(6), ep: 0, init: init, pool: init, max: init, round: 1, phase: 'ready', over: false, collapsed: false,
+      rid: randId(6), ep: 0, init: init, pool: init, max: init, round: 1, phase: game === 2 ? 'talk' : 'ready', game: game, rounds: game === 2 ? ROUNDS_G2 : ROUNDS, talkOn: false, over: false, collapsed: false,
       catches: [0, 0, 0, 0, 0], locked: [false, false, false, false, false],
       submitted: [null, null, null, null, null], seen: [false, false, false, false, false],
-      totals: [0, 0, 0, 0, 0], hist: [],
-      snap: { pool: init, totals: [0, 0, 0, 0, 0] }   // Zustand zu Rundenbeginn (für "Runde zurücksetzen")
+      totals: [0, 0, 0, 0, 0], viol: [0, 0, 0, 0, 0], hist: [], manual: [false, false, false, false, false],
+      snap: { pool: init, totals: [0, 0, 0, 0, 0], viol: [0, 0, 0, 0, 0] }   // Stand zu Rundenbeginn (für "Runde zurücksetzen")
     };
   }
 
-  function revealed() { return !secret || S.over; }
   function sum(a) { return a.reduce((x, y) => x + y, 0); }
+  function editable() { return ['ready', 'running', 'collect'].indexOf(S.phase) >= 0 && !S.over; }
 
-  // Ranking nach Gesamtfang; gleiche Summe = gleicher Platz
+  // Ranking nach Gesamtfang (= Gewinn); gleiche Summe = gleicher Platz
   const MEDALS = ['🥇', '🥈', '🥉'];
   function computeRank(tots) {
     const arr = tots.map((t, i) => ({ i: i, t: t })).sort((a, b) => b.t - a.t || a.i - b.i);
@@ -265,18 +340,17 @@
     return arr;
   }
   function medal(p) { return MEDALS[p - 1] || (p + '.'); }
-  function editable() { return ['ready', 'running', 'collect'].indexOf(S.phase) >= 0 && !S.over; }
 
   /* ---------- Snapshot für die Handys ---------- */
   function snapshot() {
-    const rev = revealed();
     const l = S.hist[S.hist.length - 1];
     return {
       type: 'state', rid: S.rid, ep: S.ep, t: Date.now(), round: S.round, phase: S.phase, over: S.over, collapsed: S.collapsed,
+      game: S.game, rounds: S.rounds,
       locked: S.locked, submitted: S.submitted, totals: S.totals,
-      pool: rev ? S.pool : null,
-      timerEnd: S.phase === 'running' ? timerEnd : 0,
-      last: l ? { round: S.hist.length, asked: l.asked, actual: l.actual, start: rev ? l.start : null, end: rev ? l.end : null } : null
+      pool: S.pool, max: S.max,
+      timerEnd: (S.phase === 'running' || (S.phase === 'talk' && S.talkOn)) ? timerEnd : 0,
+      last: l ? { round: S.hist.length, asked: l.asked, actual: l.actual, start: l.start, end: l.end, demand: l.demand, dead: l.dead } : null
     };
   }
   let pubT = null;
@@ -306,27 +380,25 @@
   /* ---------- Rendering ---------- */
   function render(quiet) {
     $('roundNum').textContent = S.round;
+    renderGameUI();
     const shownPool = S.pool - (anim ? anim.taken : 0);
-    $('maxFishTxt').textContent = revealed() ? S.max : '??';
-    $('fishCountTxt').textContent = revealed() ? shownPool : '??';
+    $('maxFishTxt').textContent = S.max;
+    $('fishCountTxt').textContent = shownPool;
 
     const ratio = shownPool / S.max;
     let color, zone;
-    const rateTxt = '+' + Math.round(RATES[S.round - 1] * 100) + '% Geburten';
-    if (!revealed()) { color = '#64748b'; zone = '❓ Bestand unbekannt'; }
-    else if (shownPool === 0) { color = '#7f1d1d'; zone = '💀 Bestand zusammengebrochen'; }
-    else if (ratio > 0.6) { color = '#22c55e'; zone = '🟢 Runde ' + S.round + ': ' + rateTxt; }
-    else if (ratio > 0.3) { color = '#eab308'; zone = '🟡 Bestand unter Druck · ' + rateTxt; }
-    else { color = '#ef4444'; zone = '🔴 Kritisch · ' + rateTxt; }
+    if (S.collapsed) { color = '#7f1d1d'; zone = '💀 Der See ist tot'; }
+    else if (ratio > 0.6) { color = '#22c55e'; zone = '🟢 Gesunder Bestand'; }
+    else if (ratio > 0.3) { color = '#eab308'; zone = '🟡 Bestand unter Druck'; }
+    else { color = '#ef4444'; zone = '🔴 Kritischer Bestand'; }
     $('pondRing').style.borderColor = color;
     $('zoneTxt').textContent = zone;
 
-    $('secretBtn').textContent = secret ? '🔒 Modus: Geheim (??)' : '🔓 Modus: Offen';
-    renderInit();
     renderCards();
     renderTracker();
     renderRanking();
     renderAction();
+    refreshManual();
     if (!quiet) { syncFish(); schedulePublish(); }
   }
 
@@ -334,6 +406,7 @@
     const b = $('actionBtn');
     let txt, cls, dis = false;
     if (S.over) { txt = '🏁 Spiel beendet'; cls = 'btn-green'; dis = true; }
+    else if (S.phase === 'talk') { txt = S.talkOn ? '⏹️ Verhandlung beenden' : '💬 Verhandlung starten (' + TALK_SEC + ' s)'; cls = S.talkOn ? 'btn-amber' : 'btn-green'; }
     else if (S.phase === 'ready') { txt = '⏱️ Runde ' + S.round + ': Timer starten'; cls = 'btn-green'; }
     else if (S.phase === 'running') { txt = '⏹️ Timer vorzeitig beenden'; cls = 'btn-amber'; }
     else if (S.phase === 'collect') { txt = '🎣 Runde ' + S.round + ': Fang ausführen'; cls = 'btn-primary'; }
@@ -346,37 +419,45 @@
 
   function renderCards() {
     const ed = editable();
+    const last = S.hist[S.hist.length - 1];
+    const showResult = !ed && !anim && last;
     for (let i = 0; i < 5; i++) {
       const card = $('card-' + (i + 1));
+      const wasViol = !!(showResult && last.viol[i]);
       card.classList.toggle('locked', S.locked[i] && !anim);
       card.classList.toggle('sent', ed && S.submitted[i] !== null && !S.locked[i]);
+      card.classList.toggle('viol', wasViol);
       card.classList.toggle('fishing', !!anim && anim.cur === i);
+      // Während der Eingabe bleiben die Zahlen verborgen (geheime Abgabe)
       const dis = ed ? '' : 'disabled';
-      const hide = secret && !S.over;                 // Geheimmodus: eingetragene Zahlen verbergen
-      const disAdj = (ed && !hide) ? '' : 'disabled'; // +/- würden blind ändern, daher im Geheimmodus aus
+      const disAdj = 'disabled';
       const tot = S.totals[i] + (anim ? anim.tot[i] : 0);
       const icons = '🐟'.repeat(Math.min(tot, 120)) + (tot > 120 ? '…' : '');
       let st;
       if (anim) st = anim.done[i] ? '🎣 gefangen: ' + anim.res.actual[i] : (anim.cur === i ? '🎣 zieht Fische …' : '⏳ wartet …');
-      else if (S.phase === 'done' || S.over) st = '🎣 gefangen: ' + (S.hist.length ? S.hist[S.hist.length - 1].actual[i] : 0);
-      else if (S.locked[i]) st = hide ? '✅ fixiert' : '✅ fixiert: ' + S.catches[i];
-      else if (S.submitted[i] !== null) st = hide ? '📱 gesendet ✓' : '📱 gesendet: ' + S.submitted[i];
+      else if (S.phase === 'done' || S.over) {
+        if (!last) st = '–';
+        else if (last.dead) st = '💀 See tot: 0 gefangen';
+        else st = '🎣 gefangen: ' + last.actual[i] + (last.viol[i] ? ' ⚠️ illegal' : '');
+      }
+      else if (S.locked[i]) st = S.manual[i] ? '✏️ manuell eingetragen' : '✅ fixiert';
+      else if (S.submitted[i] !== null) st = '📱 gesendet ✓';
       else if (S.seen[i]) st = '📱 verbunden';
       else st = '⏳ noch nicht verbunden';
+      const maskPh = (S.catches[i] > 0 || S.submitted[i] !== null) ? '✔' : '–';
+      const input = ed
+        ? '<input type="password" inputmode="numeric" autocomplete="off" value="" placeholder="' + maskPh + '" style="width:54px;height:26px;font-size:15px;" onchange="setC(' + i + ',this.value)">'
+        : '<input type="number" value="' + (S.catches[i]) + '" disabled style="width:54px;height:26px;font-size:15px;">';
       card.innerHTML =
-        '<div class="team-title"><span style="color:' + COLORS[i] + '">Gruppe ' + (i + 1) + '</span><span>' + (S.locked[i] ? '🔒' : '') + '</span></div>' +
-        '<div class="team-status">' + st + '</div>' +
+        '<div class="team-title"><span style="color:' + COLORS[i] + '">Firma ' + (i + 1) + '</span><span>' + (S.viol[i] ? '<span style="color:#f87171;font-size:12px;">⚠️×' + S.viol[i] + '</span> ' : '') + (S.locked[i] ? '🔒' : '') + '</span></div>' +
+        '<div class="team-status"' + (wasViol ? ' style="color:#f87171;"' : '') + '>' + st + '</div>' +
         '<div class="host-manual">' +
-          '<button class="btn-mini" ' + disAdj + ' onclick="adj(' + i + ',-5)">−5</button>' +
-          '<button class="btn-mini" ' + disAdj + ' onclick="adj(' + i + ',-1)">−1</button>' +
-          (hide
-            ? '<input type="password" inputmode="numeric" autocomplete="off" value="" placeholder="' + ((S.catches[i] > 0 || S.submitted[i] !== null) ? '✔' : '–') + '" ' + dis + ' style="width:54px;height:26px;font-size:15px;" onchange="setC(' + i + ',this.value)">'
-            : '<input type="number" min="0" max="500" value="' + S.catches[i] + '" ' + dis + ' style="width:54px;height:26px;font-size:15px;" onchange="setC(' + i + ',this.value)">') +
-          '<button class="btn-mini" ' + disAdj + ' onclick="adj(' + i + ',1)">+1</button>' +
-          '<button class="btn-mini" ' + disAdj + ' onclick="adj(' + i + ',5)">+5</button>' +
+          '<button class="btn-mini" ' + disAdj + '>−</button>' +
+          input +
+          '<button class="btn-mini" ' + disAdj + '>+</button>' +
         '</div>' +
         '<button class="btn-ghost" ' + dis + ' onclick="toggleLock(' + i + ')">' + (S.locked[i] ? 'Entsperren' : 'Fixieren') + '</button>' +
-        '<div class="team-basket"><div class="basket-header"><span>🧺 Korb</span><strong style="color:#e2e8f0;">' + tot + ' gesamt</strong></div>' +
+        '<div class="team-basket"><div class="basket-header"><span>🧺 Korb</span><strong style="color:#e2e8f0;">' + tot + ' 🐟 · ' + eur(tot) + '</strong></div>' +
         '<div class="basket-icons">' + icons + '</div></div>';
     }
   }
@@ -385,61 +466,166 @@
     // während der Fang-Animation zählt der Live-Stand mit
     const tots = S.totals.map((t, i) => t + (anim ? anim.tot[i] : 0));
     const any = sum(tots) > 0;
+    $('rankTitle').textContent = S.game === 2 ? '📊 Gewinn pro Firma' : '🏆 Ranking';
+    $('rankSub').textContent = S.game === 2 ? 'Ziel: See und alle Firmen erhalten' : 'nach Gewinn';
     const max = Math.max(1, ...tots);
     $('rankList').innerHTML = computeRank(tots).map(r => {
-      const rounds = [0, 1, 2].map(k => 'R' + (k + 1) + ' ' + (S.hist[k] ? S.hist[k].actual[r.i] : '–')).join(' · ');
+      const rounds = [];
+      for (let k = 0; k < S.rounds; k++) rounds.push('R' + (k + 1) + ' ' + (S.hist[k] ? S.hist[k].actual[r.i] : '–'));
+      const vtxt = S.viol[r.i] ? ' · <span style="color:#f87171;font-weight:700;">⚠️ ' + S.viol[r.i] + '× über dem Limit</span>' : '';
       return '<div class="rk-row">' +
-        '<span style="font-size:20px;text-align:center;">' + (any ? medal(r.place) : '–') + '</span>' +
-        '<strong style="color:' + COLORS[r.i] + '">Gruppe ' + (r.i + 1) + '</strong>' +
+        '<span style="font-size:20px;text-align:center;">' + (S.game === 2 ? '•' : (any ? medal(r.place) : '–')) + '</span>' +
+        '<strong style="color:' + COLORS[r.i] + '">Firma ' + (r.i + 1) + '</strong>' +
         '<div class="rk-bar"><div class="rk-fill" style="width:' + (r.t / max * 100) + '%;background:' + COLORS[r.i] + '"></div></div>' +
-        '<span class="rk-rounds"><b style="color:#f8fafc;font-size:15px;">' + r.t + ' 🐟</b> &nbsp; ' + rounds + '</span></div>';
+        '<span class="rk-info"><b style="color:#f8fafc;font-size:15px;">' + eur(r.t) + '</b> (' + r.t + ' 🐟)<br>' + rounds.join(' · ') + vtxt + '</span></div>';
     }).join('');
   }
 
   function renderTracker() {
     let html = '';
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < S.rounds; i++) {
       const h = S.hist[i];
       const active = (i + 1 === S.round && !S.over) ? ' active' : '';
       let body;
       if (h) {
-        const f = x => revealed() ? x : '??';
-        body = 'Start: <b>' + f(h.start) + '</b> Fische<br>Gewünscht: <b>' + h.demand + '</b> · Gefangen: <b>' + h.caught + '</b><br>' +
-               'Rest: <b>' + f(h.afterCatch) + '</b> · Nachwuchs: <b>+' + f(h.born) + '</b><br>Ende: <b>' + f(h.end) + '</b> Fische';
+        const vi = [];
+        h.viol.forEach((v, k) => { if (v) vi.push(k + 1); });
+        body = 'Bestand: <b>' + h.start + '</b> 🐟<br>Bestellt: <b>' + h.demand + '</b> · Gefangen: <b>' + h.caught + '</b><br>' +
+               'Neuer Bestand: <b>' + h.end + '</b>' +
+               (h.dead ? '<br><span style="color:#f87171;">💀 See tot</span>' : '') +
+               (vi.length ? '<br><span style="color:#f87171;">⚠️ Illegal: Firma ' + vi.join(', ') + '</span>' : '');
       } else {
         body = '<span style="color:#64748b;">— noch nicht gespielt —</span>';
       }
-      html += '<div class="round-box' + active + '"><h4><span>Runde ' + (i + 1) + ': ' + RNAMES[i] + '</span><span style="color:#4ade80;">+' + Math.round(RATES[i] * 100) + '%</span></h4>' + body + '</div>';
+      html += '<div class="round-box' + active + '"><h4>Runde ' + (i + 1) + '</h4>' + body + '</div>';
     }
     $('tracker').innerHTML = html;
   }
 
   function banner(t) { $('bannerMsg').textContent = t; }
   function readyBanner() {
-    banner('Runde ' + S.round + ' bereit. Mit "Timer starten" öffnest du die Eingabe auf den Handys für 60 Sekunden.');
+    if (S.phase === 'talk') {
+      banner('Spiel 2 · Auftrag: See und alle Firmen erhalten · Die Regel ist jetzt bekannt. Mit "Verhandlung starten" dürfen die Firmen ' + TALK_SEC + ' s miteinander reden.');
+      return;
+    }
+    const mandate = S.game === 2 ? 'See und alle Firmen erhalten' : 'Gewinn maximieren';
+    banner('Runde ' + S.round + ' bereit · Auftrag: ' + mandate + ' · Limit: ' + LIMIT + ' Fische. Mit "Timer starten" öffnest du die Eingabe auf den Handys (' + TIMER_SEC + ' s).');
   }
 
   /* ---------- Eingaben (Host, manuell) ---------- */
-  function clampC(v) { v = parseInt(v, 10); if (isNaN(v) || v < 0) v = 0; return Math.min(v, 500); }
-  function adj(i, d) { if (!editable()) return; S.catches[i] = clampC(S.catches[i] + d); render(); }
-  function setC(i, v) { if (!editable()) return; S.catches[i] = clampC(v); render(); }
-  function toggleLock(i) { if (!editable()) return; S.locked[i] = !S.locked[i]; render(); }
-  function toggleSecretMode() { secret = !secret; render(); }
+  function clampC(v) { v = parseInt(v, 10); if (isNaN(v) || v < 0) v = 0; return Math.min(v, MAXIN); }
+  // Zahl über das verdeckte Feld auf der Karte: zählt als manuelle Eingabe und sperrt die Handy-Eingabe
+  function setC(i, v) { if (!editable()) return; S.catches[i] = clampC(v); S.manual[i] = true; S.locked[i] = true; render(); }
+  function toggleLock(i) {
+    if (!editable()) return;
+    S.locked[i] = !S.locked[i];
+    if (!S.locked[i]) S.manual[i] = false;   // entsperrt: Handy darf wieder senden
+    render();
+  }
+
+  /* ---------- Manuelle Eingabe (Notfall, falls Handys oder Sync nicht gehen) ---------- */
+  function openManual() { $('manualModal').classList.add('active'); buildManual(); }
+  function closeManual() { $('manualModal').classList.remove('active'); }
+  function buildManual() {
+    let h = '';
+    for (let i = 0; i < 5; i++) {
+      h += '<div class="man-row"><strong style="color:' + COLORS[i] + '">Firma ' + (i + 1) + '</strong>' +
+        '<button class="btn-step" onclick="manAdj(' + i + ',-5)">−5</button>' +
+        '<button class="btn-step" onclick="manAdj(' + i + ',-1)">−1</button>' +
+        '<input type="number" id="man-' + i + '" min="0" max="' + MAXIN + '" value="0" onchange="manSet(' + i + ',this.value)">' +
+        '<button class="btn-step" onclick="manAdj(' + i + ',1)">+1</button>' +
+        '<button class="btn-step" onclick="manAdj(' + i + ',5)">+5</button>' +
+        '<span class="man-src" id="mansrc-' + i + '"></span></div>';
+    }
+    $('manRows').innerHTML = h;
+    refreshManual();
+  }
+  function refreshManual() {
+    if (!$('manualModal').classList.contains('active') || !$('man-0')) return;
+    const ed = editable();
+    for (let i = 0; i < 5; i++) {
+      const inp = $('man-' + i);
+      if (document.activeElement !== inp) inp.value = S.catches[i];
+      inp.disabled = !ed;
+      inp.style.color = S.catches[i] > LIMIT ? '#f87171' : '#38bdf8';
+      document.querySelectorAll('#manRows .man-row:nth-child(' + (i + 1) + ') button').forEach(b => { b.disabled = !ed; });
+      $('mansrc-' + i).textContent = S.manual[i] ? '✏️ manuell (🔒)' : (S.submitted[i] !== null ? '📱 vom Handy' : '–');
+    }
+    let extra = '';
+    if (S.phase === 'ready' || S.phase === 'running') {
+      extra = '<button class="btn-amber" style="padding:10px 18px; font-size:14px;" onclick="skipToCollect()">⏭️ Ohne Timer weiter zum Fang</button>';
+    } else if (S.phase === 'done') {
+      extra = '<div style="color:#94a3b8; font-size:13px; margin-bottom:8px;">Die Runde ist schon ausgewertet. Zum Korrigieren die Auswertung zurücknehmen: Die Eingaben bleiben erhalten.</div>' +
+              '<button class="btn-danger" style="padding:10px 18px; font-size:14px;" onclick="undoHarvest()">↩ Auswertung rückgängig machen</button>';
+    } else if (S.phase === 'animating') {
+      extra = '<div style="color:#94a3b8; font-size:13px;">Der Fang läuft gerade …</div>';
+    }
+    $('manExtra').innerHTML = extra;
+  }
+  function manSet(i, v) {
+    if (!editable()) return;
+    S.catches[i] = clampC(v); S.manual[i] = true; S.locked[i] = true;   // manuell = Handy-Eingabe dieser Firma gesperrt
+    render();
+  }
+  function manAdj(i, d) { manSet(i, S.catches[i] + d); }
+  function manClear() {
+    if (!editable()) return;
+    S.catches = [0, 0, 0, 0, 0];
+    S.submitted = [null, null, null, null, null];
+    S.manual = [false, false, false, false, false];
+    S.locked = [false, false, false, false, false];
+    render();
+  }
+  // Timer überspringen: Eingabe schließen und direkt zum Fang (z. B. wenn alles per Zettel läuft)
+  function skipToCollect() {
+    if (S.phase !== 'ready' && S.phase !== 'running') return;
+    stopTimer();
+    S.phase = 'collect';
+    banner('⏭️ Ohne Timer weiter: Eingaben sind geschlossen. Prüfe die Mengen und klicke "Fang ausführen".');
+    render();
+  }
+  // Ausgewertete Runde zurücknehmen, die Eingaben bleiben stehen und können korrigiert werden
+  function undoHarvest() {
+    if (S.phase !== 'done' || anim || !S.hist.length) return;
+    if (!confirm('Auswertung von Runde ' + S.round + ' rückgängig machen? Die Eingaben bleiben erhalten. Du kannst sie korrigieren und den Fang danach erneut ausführen.')) return;
+    const h = S.hist.pop();
+    S.pool = S.snap.pool;
+    S.totals = S.snap.totals.slice();
+    S.viol = S.snap.viol.slice();
+    S.over = false; S.collapsed = false;
+    S.catches = h.asked.slice();
+    S.locked = [false, false, false, false, false];
+    S.submitted = [null, null, null, null, null];
+    S.manual = [false, false, false, false, false];
+    S.ep++;
+    S.phase = 'collect';
+    fishes = [];
+    $('resultModal').classList.remove('active');
+    banner('↩ Auswertung zurückgenommen. Korrigiere die Zahlen und klicke "Fang ausführen".');
+    render();
+  }
 
   /* ---------- Resets ---------- */
   function clearRoundInput() {
     S.catches = [0, 0, 0, 0, 0];
     S.locked = [false, false, false, false, false];
     S.submitted = [null, null, null, null, null];
+    S.manual = [false, false, false, false, false];
     S.ep++;
   }
 
   // Nur die aktuelle Runde zurück auf Anfang (falls schon ausgewertet: Ergebnis wird rückgängig gemacht)
   function resetRound() {
     if (S.phase === 'animating') return;
+    if (S.phase === 'talk') {   // Verhandlung: nur den Timer zurücksetzen
+      if (tInt) { clearInterval(tInt); tInt = null; }
+      timerEnd = 0; tLeft = TIMER_SEC; updateTimerUI();
+      S.talkOn = false; readyBanner(); render();
+      return;
+    }
     const executed = S.hist.length >= S.round;
     const q = executed
-      ? 'Runde ' + S.round + ' zurücksetzen? Das Ergebnis dieser Runde wird rückgängig gemacht, der Teich und die Körbe gehen auf den Stand vor der Runde zurück.'
+      ? 'Runde ' + S.round + ' zurücksetzen? Das Ergebnis dieser Runde wird rückgängig gemacht, der See und die Körbe gehen auf den Stand vor der Runde zurück.'
       : 'Runde ' + S.round + ' zurücksetzen? Alle Eingaben dieser Runde werden gelöscht und der Timer gestoppt. Frühere Runden bleiben erhalten.';
     if (!confirm(q)) return;
     stopTimer();
@@ -447,6 +633,7 @@
       S.hist.length = S.round - 1;
       S.pool = S.snap.pool;
       S.totals = S.snap.totals.slice();
+      S.viol = S.snap.viol.slice();
       S.over = false; S.collapsed = false;
       fishes = [];
     }
@@ -463,30 +650,18 @@
     if (!confirm('GANZES Spiel zurücksetzen? Alle Runden, Fänge und Körbe gehen verloren. (Nur die aktuelle Runde zurücksetzen: Button "Runde zurücksetzen".)')) return;
     newGame(S.init);
   }
-  // Start-Fische-Feld: im Geheimmodus verborgen (leer, nur "••"), sonst normal sichtbar
-  function renderInit() {
-    const el = $('initFishInput');
-    const hide = secret && !S.over;
-    if (hide) {
-      if (el.type !== 'password') { el.type = 'password'; el.value = ''; }
-      el.placeholder = '••';
-    } else if (el.type !== 'number') {
-      el.type = 'number'; el.placeholder = ''; el.value = S.init;
-    }
-  }
   function setPool() {
     const el = $('initFishInput');
-    const raw = el.value;
-    let v = raw === '' ? S.init : parseInt(raw, 10);   // leer (Geheimmodus) = Bestand unverändert
-    if (isNaN(v)) v = 50;
+    let v = parseInt(el.value, 10);
+    if (isNaN(v)) v = S.init;
     v = Math.max(5, Math.min(500, v));
+    el.value = v;
     if ((S.hist.length > 0 || S.phase !== 'ready') && !confirm('Den Start-Bestand zu ändern setzt das GANZE Spiel zurück. Fortfahren?')) return;
-    el.value = (secret && !S.over) ? '' : v;
     newGame(v);
   }
   function newGame(v) {
     const seen = S.seen;
-    S = newState(v);
+    S = newState(v, S.game);   // bleibt im aktuellen Spiel (1 oder 2)
     S.seen = seen;
     stopTimer();
     anim = null;
@@ -499,7 +674,8 @@
   /* ---------- Ablauf / Hauptbutton ---------- */
   function runRoundAction() {
     if (S.over) return;
-    if (S.phase === 'ready') startTimer();
+    if (S.phase === 'talk') { if (S.talkOn) endTalk(true); else startTalk(); }
+    else if (S.phase === 'ready') startTimer();
     else if (S.phase === 'running') endTimer(true);
     else if (S.phase === 'collect') harvest();
     else if (S.phase === 'done') { nextRound(); startTimer(); }
@@ -509,13 +685,13 @@
     S.round++;
     S.phase = 'ready';
     clearRoundInput();
-    S.snap = { pool: S.pool, totals: S.totals.slice() };
+    S.snap = { pool: S.pool, totals: S.totals.slice(), viol: S.viol.slice() };
     readyBanner();
     render();
   }
 
   /* ---------- Timer (Host; Handys rechnen mit der Endzeit) ---------- */
-  let tLeft = 60, tInt = null, timerEnd = 0;
+  let tLeft = TIMER_SEC, tInt = null, timerEnd = 0;
   function updateTimerUI() {
     const el = $('hostTimer');
     el.textContent = '⏱️ ' + tLeft + 's';
@@ -533,15 +709,15 @@
   function tick() {
     tLeft = Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000));
     updateTimerUI();
-    if (tLeft <= 0) endTimer(false);
+    if (tLeft <= 0) { if (S.phase === 'talk') endTalk(false); else endTimer(false); }
   }
   function startTimer() {
     if (S.phase !== 'ready') return;
     if (tInt) clearInterval(tInt);
     S.phase = 'running';
-    timerEnd = Date.now() + 60000;
+    timerEnd = Date.now() + TIMER_SEC * 1000;
     tInt = setInterval(tick, 250);
-    banner('⏱️ Runde ' + S.round + ' läuft: Die Gruppen geben jetzt ihren Fang am Handy ein (60 s).');
+    banner('⏱️ Runde ' + S.round + ' läuft: Die Firmen geben jetzt geheim ihren Fang am Handy ein (' + TIMER_SEC + ' s).');
     tick();
     render();
   }
@@ -551,78 +727,202 @@
     updateTimerUI();
     S.phase = 'collect';
     if (!early) beep();
-    banner((early ? '⏹️ Timer beendet. ' : '⏰ Zeit abgelaufen! ') + 'Eingaben sind geschlossen. Prüfe die Mengen und klicke "Fang ausführen".');
+    banner((early ? '⏹️ Timer beendet. ' : '⏰ Zeit abgelaufen! ') + 'Eingaben sind geschlossen. Klicke "Fang ausführen".');
     render();
   }
   function stopTimer() {
     if (tInt) { clearInterval(tInt); tInt = null; }
-    timerEnd = 0; tLeft = 60;
+    timerEnd = 0; tLeft = TIMER_SEC;
     updateTimerUI();
   }
 
-  /* ---------- Fang ausführen (erst berechnen, dann animieren, dann übernehmen) ---------- */
+  // Spiel 2: Verhandlung (die Firmen dürfen miteinander reden), danach beginnt Runde 1
+  function startTalk() {
+    if (S.phase !== 'talk' || S.talkOn) return;
+    if (tInt) clearInterval(tInt);
+    S.talkOn = true;
+    timerEnd = Date.now() + TALK_SEC * 1000;
+    tInt = setInterval(tick, 250);
+    banner('💬 Verhandlung läuft (' + TALK_SEC + ' s): Die Firmen sprechen miteinander über eine Gesamtgrenze und die Verteilung.');
+    tick();
+    render();
+  }
+  function endTalk(early) {
+    if (tInt) { clearInterval(tInt); tInt = null; }
+    timerEnd = 0; tLeft = TIMER_SEC;
+    updateTimerUI();
+    S.talkOn = false; S.phase = 'ready';
+    if (!early) beep();
+    readyBanner();
+    render();
+  }
+
+  /* ---------- Fang ausführen ---------- */
+  // Regeln: Summe der Bestellungen > Bestand => See tot, niemand fängt etwas, Spiel endet.
+  // Sonst fängt jede Firma ihre Menge; was übrig bleibt, verdoppelt sich (höchstens Startbestand).
   function harvest() {
     if (S.phase !== 'collect') return;
     const asked = S.catches.slice();
     const demand = sum(asked);
     const start = S.pool;
-    let actual = asked.slice();
-
-    if (demand > S.pool) {
-      // Nicht genug Fische: anteilig verteilen (größte Reste zuerst)
-      const exact = asked.map(c => c * S.pool / demand);
-      actual = exact.map(Math.floor);
-      let rest = S.pool - sum(actual);
-      const order = exact.map((e, i) => ({ i: i, fr: e - Math.floor(e) })).sort((a, b) => b.fr - a.fr);
-      for (let k = 0; k < order.length && rest > 0; k++) {
-        if (actual[order[k].i] < asked[order[k].i]) { actual[order[k].i]++; rest--; }
-      }
-    }
-    const caught = sum(actual);
-    const afterCatch = S.pool - caught;
-    let born = 0;
-    if (afterCatch > 0) born = Math.min(Math.round(afterCatch * RATES[S.round - 1]), S.max - afterCatch);
-    const res = { start: start, demand: demand, caught: caught, afterCatch: afterCatch, born: born, end: afterCatch + born, actual: actual, asked: asked };
+    const dead = demand > start;
+    const actual = dead ? [0, 0, 0, 0, 0] : asked.slice();
+    const left = dead ? 0 : start - demand;
+    const end = dead ? 0 : Math.min(S.max, left * 2);
+    const viol = asked.map(a => a > LIMIT);
+    const res = { start: start, demand: demand, asked: asked, actual: actual, caught: sum(actual), left: left, end: end, dead: dead, viol: viol };
 
     S.phase = 'animating';
-    banner('🎣 Runde ' + S.round + ': Die Fische werden gefangen …');
-    startAnim(res, () => applyHarvest(res));
-    render();
+    if (dead) {
+      banner('💀 Alle Firmen bestellen zusammen ' + demand + ' Fische, im See sind aber nur ' + start + ' …');
+      render();
+      setTimeout(() => applyHarvest(res), 1800);
+    } else {
+      banner('🎣 Runde ' + S.round + ': Die Fische werden gefangen …');
+      startAnim(res, () => applyHarvest(res));
+      render();
+    }
   }
 
   function applyHarvest(res) {
-    for (let i = 0; i < 5; i++) S.totals[i] += res.actual[i];
+    for (let i = 0; i < 5; i++) {
+      S.totals[i] += res.actual[i];
+      if (res.viol[i]) S.viol[i]++;
+    }
     S.pool = res.end;
     S.hist.push(res);
     S.phase = 'done';
 
-    let msg = 'Runde ' + S.round + ' beendet: ' + res.caught + ' Fische gefangen';
-    if (res.demand > res.start) msg += ' (Wunsch ' + res.demand + (secret ? '' : ' > Bestand ' + res.start) + ', anteilig gekürzt)';
-    msg += secret ? '.' : ', ' + res.born + ' neue geboren.';
+    const vi = [];
+    res.viol.forEach((v, k) => { if (v) vi.push(k + 1); });
+    const vtxt = vi.length ? ' ⚠️ Über dem Limit: Firma ' + vi.join(', ') + '.' : '';
 
-    if (S.pool === 0) {
+    let msg;
+    if (res.dead) {
       S.over = true; S.collapsed = true;
-      msg = '💀 Der Bestand ist zusammengebrochen! Es gibt keine Fische mehr.';
-    } else if (S.round === 3) {
-      S.over = true;
-      msg = '🏁 Letzte Runde beendet. ' + (secret ? '' : 'Es leben noch ' + S.pool + ' Fische im Teich.');
+      msg = '💀 Der See ist tot! Bestellt wurden ' + res.demand + ' Fische bei einem Bestand von ' + res.start + '. Niemand fängt etwas. Alle Firmen sind pleite.' + vtxt;
+    } else {
+      const top = computeRank(S.totals).filter(r => r.place === 1).map(r => 'Firma ' + (r.i + 1));
+      msg = 'Runde ' + S.round + ': Gesamtfang ' + res.caught + ' Fische (' + eur(res.caught) + '). Neuer Bestand: ' + res.end + '.' + (S.game === 2 ? '' : ' 🥇 ' + top.join(' & ') + (top.length > 1 ? ' führen' : ' führt') + ' mit ' + eur(S.totals[computeRank(S.totals)[0].i]) + '.') + vtxt;
+      if (S.round === S.rounds) { S.over = true; msg = '🏁 Letzte Runde beendet. ' + msg; }
     }
     banner(msg);
     render();
     if (S.over) showResults();
   }
 
+  /* ---------- Ergebnis und Aufdecken ---------- */
   function showResults() {
     const total = sum(S.totals);
     const rank = computeRank(S.totals);
-    $('resTitle').textContent = S.collapsed ? '💀 Die Allmende ist zusammengebrochen' : '🏁 Ergebnis nach 3 Runden';
+    $('resTitle').textContent = S.collapsed ? '💀 Der See ist tot' : '🏁 ' + (S.game === 2 ? 'Spiel 2 beendet' : 'Ergebnis nach ' + S.hist.length + ' Runden');
     $('resText').textContent = S.collapsed
-      ? 'Alle zusammen haben ' + total + ' Fische gefangen, dann war der Teich leer. Individuell vernünftig, gemeinsam katastrophal.'
-      : 'Gesamtfang: ' + total + ' Fische. Im Teich leben noch ' + S.pool + ' von ' + S.max + ' Fischen. Wie nachhaltig war eure Entscheidung?';
-    $('resRank').innerHTML = rank.map((r, k) =>
-      '<div class="rank-row"><span>' + medal(r.place) + ' <span style="color:' + COLORS[r.i] + '">Gruppe ' + (r.i + 1) + '</span></span><span>' + r.t + ' 🐟</span></div>'
+      ? 'Die Bestellungen überstiegen den Bestand. Niemand hat in der letzten Runde etwas gefangen, alle Firmen sind aus dem Geschäft. Gesamtgewinn aller Firmen bis dahin: ' + eur(total) + '.'
+      : 'Gesamtgewinn aller Firmen: ' + eur(total) + '. Im See leben noch ' + S.pool + ' von ' + S.max + ' Fischen.';
+    $('resRank').innerHTML = rank.map(r =>
+      '<div class="rank-row"><span>' + (S.game === 2 ? '•' : medal(r.place)) + ' <span style="color:' + COLORS[r.i] + '">Firma ' + (r.i + 1) + '</span>' +
+      (S.viol[r.i] ? ' <span style="color:#f87171;font-size:13px;">⚠️ ' + S.viol[r.i] + '× über dem Limit</span>' : '') + '</span><span>' + eur(r.t) + ' (' + r.t + ' 🐟)</span></div>'
     ).join('');
+    if (S.game === 2) {
+      buildCompare();
+      $('revealBtn').textContent = '📊 Vergleich & Debrief';
+      $('revTitle').textContent = '📊 Spiel 1 gegen Spiel 2';
+    } else {
+      buildReveal();
+      $('revealBtn').textContent = '🔍 Verborgene Regel aufdecken';
+      $('revTitle').textContent = '🔍 Was ihr nicht wusstet';
+    }
+    initConfetti();
+    showReveal(false);
     $('resultModal').classList.add('active');
+  }
+  function showReveal(on) {
+    $('resMain').style.display = on ? 'none' : 'block';
+    $('resReveal').style.display = on ? 'block' : 'none';
+  }
+  function buildReveal() {
+    const half = Math.floor(S.max / 2);
+    const per = half / 5;
+    const perTxt = Number.isInteger(per) ? per : per.toFixed(1).replace('.', ',');
+    const full = 5 * LIMIT;
+    let legal;
+    if (full > S.max) legal = 'Schon wenn alle fünf Firmen das erlaubte Maximum von ' + LIMIT + ' ausschöpfen (' + full + ' Fische), übersteigt das den Bestand von ' + S.max + '. Der See stirbt in Runde 1.';
+    else {
+      const next = Math.min(S.max, 2 * (S.max - full));
+      legal = 'Wenn alle fünf Firmen das erlaubte Maximum von ' + LIMIT + ' fangen (' + full + ' Fische), bleiben ' + (S.max - full) + ' übrig und verdoppeln sich auf ' + next + '. ' +
+              (full > next ? 'In Runde 2 bestellen wieder alle bis zu ' + full + ' Fische. Das ist mehr als der See hat, und er stirbt.' : 'Das hält nur noch kurz.');
+    }
+    const vi = [];
+    S.viol.forEach((v, k) => { if (v) vi.push('Firma ' + (k + 1) + ' (' + v + '×)'); });
+    const lawTxt = vi.length
+      ? 'Über dem Limit von ' + LIMIT + ' waren: ' + vi.join(', ') + '. Wer hielt sich nicht an das Gesetz, und warum? Und was hätte ein Gesetz bewirkt, das härter kontrolliert?'
+      : 'Alle Firmen haben sich an das Limit gehalten. Und trotzdem ' + (S.collapsed ? 'ist der See gestorben.' : 'war es knapp.') + ' Wer hätte ein besseres Limit setzen müssen?';
+    $('revBody').innerHTML =
+      '<p>Was nach dem Fang im See übrig bleibt, <b>verdoppelt sich</b> bis zum nächsten Mal, höchstens bis zum Startbestand von ' + S.max + '.</p>' +
+      '<h3>Der nachhaltige Fang</h3>' +
+      '<p>Wenn alle zusammen höchstens <b>' + half + ' Fische</b> pro Runde fangen (bei fünf Firmen ' + perTxt + ' pro Firma), bleibt der See für immer bei ' + S.max + '. Das ist ein Gewinn von ' + eur(half) + ' pro Runde, immer wieder.</p>' +
+      '<h3>Das Gesetz</h3>' +
+      '<p>' + legal + '</p>' +
+      '<p>' + lawTxt + '</p>' +
+      '<h3>Fragen für das Plenum</h3>' +
+      '<ul><li>Wer hat euch beigebracht, den Gewinn zu maximieren? Der Auftrag am Anfang. Gleicher See, gleiche Menschen, anderer Auftrag.</li>' +
+      '<li>Das Limit war erlaubt, aber nicht nachhaltig. Wer legt in der Wirklichkeit solche Grenzen fest?</li>' +
+      '<li>Welche Fähigkeiten hättet ihr gebraucht, um anders zu entscheiden?</li></ul>';
+  }
+
+  /* ---------- Spiel 1 / Spiel 2 ---------- */
+  let G1 = null;   // gespeichertes Ergebnis von Spiel 1 (für den Vergleich)
+  function summarize(st) {
+    return { rounds: st.hist.length, collapsed: st.collapsed, pool: st.pool, max: st.max, total: sum(st.totals), viol: sum(st.viol) };
+  }
+  function g1Text(g) {
+    return (g.collapsed ? '💀 See in Runde ' + g.rounds + ' gestorben, alle Firmen pleite.' : 'Nach ' + g.rounds + ' Runden: ' + g.pool + ' von ' + g.max + ' Fischen im See.') +
+           ' Gesamtgewinn aller Firmen: <b>' + eur(g.total) + '</b>' + (g.viol ? ' · ⚠️ ' + g.viol + ' Verstöße gegen das Limit' : '') + '.';
+  }
+  function renderGameUI() {
+    $('roundMax').textContent = S.rounds;
+    $('gameBadge').textContent = S.game === 2 ? 'Spiel 2: See & Firmen erhalten' : 'Spiel 1: Gewinn maximieren';
+    $('gameBtn').textContent = S.game === 2 ? '🎮 Zurück zu Spiel 1' : '🎮 Spiel 2 starten';
+    $('gameBtn').disabled = S.phase === 'animating';
+    const box = $('g1box');
+    if (S.game === 2 && G1) {
+      box.style.display = 'block';
+      $('g1panel').innerHTML = '<h3><span>📋 Ergebnis Spiel 1 (Gewinn maximieren)</span></h3><div style="font-size:14px; color:#cbd5e1; line-height:1.5;">' + g1Text(G1) + '</div>';
+    } else box.style.display = 'none';
+  }
+  function switchGame() {
+    if (S.phase === 'animating') return;
+    const init = S.init, seen = S.seen;
+    if (S.game === 1) {
+      const q = 'Spiel 2 starten?\n\n' + (S.over ? '' : 'Spiel 1 ist noch nicht beendet. ') +
+        'Das Ergebnis von Spiel 1 wird gespeichert. Spiel 2 beginnt mit neuem Scoreboard und vollem See (' + init + ' Fische). Die Firmen kennen jetzt die Regel und dürfen miteinander reden.';
+      if (!confirm(q)) return;
+      G1 = S.hist.length ? summarize(S) : null;
+      S = newState(init, 2);
+    } else {
+      if (!confirm('Zurück zu Spiel 1? Das gespeicherte Ergebnis von Spiel 1 und alle Daten von Spiel 2 gehen verloren.')) return;
+      G1 = null;
+      S = newState(init, 1);
+    }
+    S.seen = seen;
+    stopTimer(); anim = null; fishes = [];
+    $('resultModal').classList.remove('active');
+    readyBanner();
+    render();
+  }
+  function buildCompare() {
+    const g1 = G1 ? g1Text(G1) : 'Kein Ergebnis von Spiel 1 gespeichert.';
+    const g2 = g1Text(summarize(S));
+    $('revBody').innerHTML =
+      '<h3>Spiel 1: Gewinn maximieren</h3><p>' + g1 + '</p>' +
+      '<h3>Spiel 2: See und alle Firmen erhalten</h3><p>' + g2 + '</p>' +
+      '<p><b>Gleicher See, gleiche Menschen, anderer Auftrag.</b></p>' +
+      '<h3>Die drei Entscheidungen in Spiel 2</h3>' +
+      '<ul><li>Wie viele Fische insgesamt? Das ist die tragfähige Größe.</li><li>Wer bekommt wie viele? Das ist die faire Verteilung.</li><li>Wer fischt und wie? Das ist die effiziente Zuteilung.</li></ul>' +
+      '<h3>Fragen für das Plenum</h3>' +
+      '<ul><li>Wer hat euch in Spiel 1 beigebracht, den Gewinn zu maximieren? Der Auftrag am Anfang, bevor ihn jemand hinterfragt hat.</li>' +
+      '<li>Welche Fähigkeiten brauchte Spiel 2, die Spiel 1 nie verlangt hat? Zum Beispiel verhandeln, die Grenzen des Systems kennen, teilen, langfristig denken.</li>' +
+      '<li>Wir haben für euch die Regeln geändert. Wer tut das in der Wirklichkeit?</li></ul>';
   }
 
   /* ---------- QR-Codes ---------- */
@@ -635,14 +935,14 @@
       for (let i = 1; i <= 5; i++) {
         const url = base + '?room=' + ROOM + '&g=' + i + '&b=' + brokerIdx;
         const src = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(url);
-        h += '<div class="qr-item"><strong style="color:' + COLORS[i - 1] + '">Gruppe ' + i + '</strong><br><img src="' + src + '" alt="QR Gruppe ' + i + '"></div>';
+        h += '<div class="qr-item"><strong style="color:' + COLORS[i - 1] + '">Firma ' + i + '</strong><br><img src="' + src + '" alt="QR Firma ' + i + '"></div>';
       }
       $('qrGrid').innerHTML = h;
     }
     $('qrModal').classList.toggle('active', !!show);
   }
 
-  /* ---------- Fisch-Animation (Teich + Fang-Flug) ---------- */
+  /* ---------- Fisch-Animation (See + Fang-Flug) ---------- */
   const cv = $('arenaCanvas');
   const ctx = cv.getContext('2d');
   let fishes = [];
@@ -656,10 +956,7 @@
   }
   function syncFish() {
     if (anim) return;
-    let n;
-    if (S.pool === 0) n = 0;
-    else if (revealed()) n = Math.min(S.pool, 150);
-    else n = 25; // geheim: feste Anzeige, verrät den Bestand nicht
+    const n = S.pool === 0 ? 0 : Math.min(S.pool, 150);
     while (fishes.length < n) fishes.push(mkFish());
     if (fishes.length > n) fishes.length = n;
   }
@@ -684,7 +981,7 @@
     return { x: r.left - ar.left + r.width / 2, y: r.top - ar.top + r.height / 2 };
   }
 
-  // Zeitplan: Gruppe 1, dann 2, 3, 4, 5. Jede zieht ihre Fische nacheinander aus dem Teich.
+  // Zeitplan: Firma 1, dann 2, 3, 4, 5. Jede zieht ihre Fische nacheinander aus dem See.
   function startAnim(res, onDone) {
     const queue = [];
     let t = performance.now() + 500;
@@ -706,7 +1003,6 @@
   }
 
   function stepAnim(now) {
-    // Zeitplan abarbeiten
     while (anim.queue.length && anim.queue[0].at <= now) {
       const ev = anim.queue.shift();
       if (ev.type === 'team') { anim.cur = ev.team; render(true); }
@@ -719,13 +1015,13 @@
         anim.sprites.push({ x0: src.x, y0: src.y, x1: tg.x, y1: tg.y, t0: now, hue: src.hue, team: ev.team, share: ev.share });
       }
     }
-    // Flug zeichnen / Ankünfte verbuchen
     for (let k = anim.sprites.length - 1; k >= 0; k--) {
       const sp = anim.sprites[k];
       const p = Math.min(1, (now - sp.t0) / FLIGHT);
       if (p >= 1) {
         anim.sprites.splice(k, 1);
         anim.tot[sp.team] += sp.share;
+        cheerUntil[sp.team] = performance.now() + 450;
         anim.taken += sp.share;
         render(true);
         continue;
@@ -736,7 +1032,6 @@
       const ang = Math.atan2(sp.y1 - sp.y0, sp.x1 - sp.x0) + Math.sin(e * 14) * 0.25;
       drawFish(x, y, ang, 1.4 - 0.4 * e, sp.hue);
     }
-    // Fertig?
     if (!anim.queue.length && !anim.sprites.length) {
       const cb = anim.onDone;
       anim = null;
@@ -745,7 +1040,10 @@
   }
 
   function loop() {
+    drawBgFrame();
+    drawPodiumFrame();
     ctx.clearRect(0, 0, 980, 640);
+    drawHostFigures();
     for (const f of fishes) {
       f.x += f.vx; f.y += f.vy;
       const dx = f.x - CX, dy = f.y - CY, d = Math.hypot(dx, dy);
@@ -762,6 +1060,321 @@
     }
     if (anim) stepAnim(performance.now());
     requestAnimationFrame(loop);
+  }
+
+  /* ================= Welt: Hintergrund, Figuren, Podest ================= */
+  const ANIMALS = ['fox', 'chick', 'bear', 'penguin', 'bunny'];
+  const BODY = { fox: '#f97316', chick: '#fff1a8', bear: '#a16207', penguin: '#64748b', bunny: '#e2e8f0' };
+  const BELLY = { fox: '#fde68a', chick: '#fffbe0', bear: '#fcd34d', penguin: '#f8fafc', bunny: '#ffffff' };
+  // Standorte der Figuren (Füße) in der Arena, jeweils neben der Karte mit Blick zum See
+  const FIG = [{ x: 340, y: 112 }, { x: 700, y: 262 }, { x: 762, y: 440 }, { x: 218, y: 440 }, { x: 280, y: 262 }];
+  let cheerUntil = [0, 0, 0, 0, 0];
+
+  function blankSt() { return { crown: false, sad: false, shock: false, cheer: false, bubble: null }; }
+  function ell(c, x, y, rx, ry, fill) { c.fillStyle = fill; c.beginPath(); c.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); c.fill(); }
+
+  // Eine Tierfigur zeichnen. (x,y) = Füße, s = Größe, face = 1/-1 (Blickrichtung), rod = Angelwinkel
+  function drawChar(c, i, x, y, s, st, t, face, rod) {
+    rod = rod || 0;
+    const A = ANIMALS[i], col = COLORS[i], ph = i * 1.7, body = BODY[A];
+    const bob = st.shock ? Math.sin(t * 45 + ph) * 1.2 : Math.sin(t * 2.4 + ph) * 1.8;
+    const jump = st.cheer ? -Math.abs(Math.sin(t * 8 + ph)) * 11 : 0;
+    c.save();
+    c.translate(x, y); c.scale(s, s);
+    ell(c, 0, 1, 17 + jump * 0.25, 4, 'rgba(0,0,0,0.28)');
+    c.translate(0, bob + jump);
+
+    c.save();
+    c.scale(face, 1);
+    c.lineCap = 'round';
+
+    // Angel
+    const ra = rod - (st.cheer ? 0.95 : 0.45) + Math.sin(t * 1.7 + ph) * 0.05;
+    const tx = 13 + Math.cos(ra) * 44, ty = -20 + Math.sin(ra) * 44;
+    c.strokeStyle = '#8b5a2b'; c.lineWidth = 2.4;
+    c.beginPath(); c.moveTo(13, -20); c.lineTo(tx, ty); c.stroke();
+    const bx = tx + Math.cos(rod) * 8, by = ty + (st.cheer ? 14 : 26 + Math.sin(t * 2.5 + ph) * 1.5);
+    c.strokeStyle = 'rgba(255,255,255,0.85)'; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(tx, ty); c.lineTo(bx, by); c.stroke();
+    ell(c, bx, by, 3, 3, '#ef4444');
+
+    // Ohren (hinter dem Kopf)
+    if (A === 'fox') {
+      [-1, 1].forEach(d => {
+        c.fillStyle = body; c.beginPath(); c.moveTo(d * 13, -52); c.lineTo(d * 4, -57); c.lineTo(d * 12, -70); c.closePath(); c.fill();
+        c.fillStyle = '#7c2d12'; c.beginPath(); c.moveTo(d * 11, -54); c.lineTo(d * 6, -57); c.lineTo(d * 11, -64); c.closePath(); c.fill();
+      });
+    } else if (A === 'bunny') {
+      [-1, 1].forEach(d => { ell(c, d * 6, -66, 4.5, 12, body); ell(c, d * 6, -66, 2.2, 8, '#fbcfe8'); });
+    } else if (A === 'bear') {
+      [-1, 1].forEach(d => { ell(c, d * 11, -55, 5, 5, body); ell(c, d * 11, -55, 2.6, 2.6, '#fcd34d'); });
+    }
+
+    // Körper, Bauch, Füße
+    ell(c, 0, -15, 15, 16, body);
+    ell(c, 0, -12, 9, 11, BELLY[A]);
+    const feet = (A === 'chick' || A === 'penguin') ? '#f59e0b' : body;
+    ell(c, -7, 1, 6, 3, feet); ell(c, 7, 1, 6, 3, feet);
+
+    // Arme
+    c.strokeStyle = (A === 'bunny') ? '#cbd5e1' : body; c.lineWidth = 5;
+    if (st.cheer) {
+      c.beginPath(); c.moveTo(11, -24); c.lineTo(19, -40); c.moveTo(-11, -24); c.lineTo(-19, -40); c.stroke();
+      ell(c, 19, -41, 3, 3, body); ell(c, -19, -41, 3, 3, body);
+    } else {
+      c.beginPath(); c.moveTo(11, -24); c.lineTo(13, -20); c.moveTo(-11, -24); c.lineTo(-14, -14); c.stroke();
+    }
+
+    // Schal in Firmenfarbe
+    ell(c, 0, -30, 13, 4.5, col); ell(c, 8, -25, 3.2, 7, col);
+    c.strokeStyle = 'rgba(15,23,42,0.45)'; c.lineWidth = 1;
+    c.beginPath(); c.ellipse(0, -30, 13, 4.5, 0, 0, Math.PI * 2); c.stroke();
+
+    // Kopf
+    ell(c, 0, -44, 15, 14.5, body);
+    if (A === 'fox') { ell(c, -8, -39, 6, 5, '#fff'); ell(c, 8, -39, 6, 5, '#fff'); }
+    if (A === 'penguin') ell(c, 0, -42, 10.5, 11, '#f8fafc');
+    if (A === 'bear') ell(c, 0, -39.5, 6.5, 5, '#fde68a');
+
+    // Augen
+    const blink = ((t * 0.8 + ph) % 4) < 0.14;
+    [-1, 1].forEach(d => {
+      const ex = d * 5.5, ey = -45;
+      if (st.shock) { ell(c, ex, ey, 3.6, 3.6, '#fff'); ell(c, ex, ey, 1.4, 1.4, '#0f172a'); }
+      else if (blink) { c.strokeStyle = '#0f172a'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(ex - 2.5, ey); c.lineTo(ex + 2.5, ey); c.stroke(); }
+      else { ell(c, ex, ey, 2.4, 2.6, '#0f172a'); ell(c, ex + 0.8, ey - 0.9, 0.8, 0.8, '#fff'); }
+    });
+
+    // Schnabel / Nase / Wangen
+    if (A === 'chick' || A === 'penguin') { c.fillStyle = '#f59e0b'; c.beginPath(); c.moveTo(-3.2, -41); c.lineTo(3.2, -41); c.lineTo(0, -35.5); c.closePath(); c.fill(); }
+    if (A === 'fox' || A === 'bear') ell(c, 0, -40.5, 2.3, 1.7, '#1f2937');
+    if (A === 'bunny') ell(c, 0, -40.5, 2, 1.5, '#f472b6');
+    ell(c, -10, -38, 3, 2, 'rgba(244,114,182,0.55)'); ell(c, 10, -38, 3, 2, 'rgba(244,114,182,0.55)');
+
+    // Mund (Tiere mit Schnabel zeigen Stimmung über Augen und Träne)
+    if (A !== 'chick' && A !== 'penguin') {
+      const my = -35.5;
+      c.strokeStyle = '#7c2d12'; c.lineWidth = 1.6;
+      if (st.shock) ell(c, 0, my + 1, 2.6, 3.2, '#7c2d12');
+      else if (st.sad) { c.beginPath(); c.arc(0, my + 5, 4, Math.PI * 1.15, Math.PI * 1.85); c.stroke(); }
+      else { c.beginPath(); c.arc(0, my - 2, 4.2, Math.PI * 0.15, Math.PI * 0.85); c.stroke(); }
+    }
+    if (st.sad) ell(c, -9, -38 + ((t * 14) % 9), 1.6, 2.3, '#7dd3fc');
+    if (st.shock) ell(c, 14, -52 + ((t * 18) % 8), 1.7, 2.4, '#7dd3fc');
+
+    // Krone für den Führenden
+    if (st.crown) {
+      c.fillStyle = '#fbbf24'; c.strokeStyle = '#b45309'; c.lineWidth = 1.2;
+      c.beginPath(); c.moveTo(-8, -57); c.lineTo(-8, -67); c.lineTo(-4, -62); c.lineTo(0, -69); c.lineTo(4, -62); c.lineTo(8, -67); c.lineTo(8, -57); c.closePath(); c.fill(); c.stroke();
+    }
+    c.restore();
+
+    // Sprechblase (nicht gespiegelt)
+    if (st.bubble) {
+      const bb = { '✓': ['#ffffff', '#16a34a'], '…': ['#ffffff', '#64748b'], '!': ['#ef4444', '#ffffff'] }[st.bubble] || ['#fff', '#000'];
+      const by2 = -84 + Math.sin(t * 3 + ph) * 2;
+      ell(c, 20, by2, 10.5, 10.5, bb[0]); ell(c, 11, by2 + 12, 2.6, 2.6, bb[0]); ell(c, 8, by2 + 17, 1.6, 1.6, bb[0]);
+      c.fillStyle = bb[1]; c.font = '800 14px Segoe UI, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(st.bubble, 20, by2 + 1);
+    }
+    c.restore();
+  }
+
+  // Wer führt (Krone), wer ist Letzter (traurig)
+  function rankMoods(tots) {
+    const m = [0, 1, 2, 3, 4].map(() => ({ crown: false, sad: false }));
+    if (sum(tots) <= 0) return m;
+    const r = computeRank(tots), maxP = Math.max(...r.map(x => x.place));
+    r.forEach(x => { if (x.place === 1) m[x.i].crown = true; else if (x.place === maxP) m[x.i].sad = true; });
+    return m;
+  }
+
+  function hostCharState(i, now) {
+    const st = blankSt();
+    if (S.collapsed) { st.shock = true; return st; }
+    if (S.game !== 2) { const rm = rankMoods(S.totals)[i]; st.crown = rm.crown; st.sad = rm.sad; }
+    if (anim) { st.cheer = anim.cur === i || cheerUntil[i] > now; return st; }
+    if (S.phase === 'running' || S.phase === 'collect') st.bubble = S.submitted[i] !== null ? '✓' : '…';
+    else if (S.phase === 'done' && S.hist.length && S.hist[S.hist.length - 1].viol[i]) st.bubble = '!';
+    return st;
+  }
+
+  function drawHostFigures() {
+    const now = performance.now(), t = now / 1000;
+    for (let i = 0; i < 5; i++) {
+      const f = FIG[i];
+      const face = f.x < CX ? 1 : -1;
+      const rod = Math.max(-0.2, Math.min(0.9, Math.atan2(CY - (f.y - 20), Math.abs(CX - f.x))));
+      drawChar(ctx, i, f.x, f.y, 1, hostCharState(i, now), t, face, rod);
+    }
+  }
+
+  // Figur auf dem Handy
+  function phLoop() {
+    const c = $('phChar').getContext('2d');
+    c.clearRect(0, 0, 170, 150);
+    const st = blankSt(), g = PHONE_G - 1;
+    if (ST) {
+      if (ST.collapsed) st.shock = true;
+      else {
+        if (ST.game !== 2) { const rm = rankMoods(ST.totals)[g]; st.crown = rm.crown; st.sad = rm.sad; }
+        if (ST.phase === 'running') { st.bubble = ST.submitted[g] !== null ? '✓' : '…'; st.cheer = ST.submitted[g] !== null; }
+        else if (ST.phase === 'done' && ST.last && ST.last.asked[g] > LIMIT) st.bubble = '!';
+      }
+    }
+    drawChar(c, g, 85, 128, 1.25, st, performance.now() / 1000, 1, 0.1);
+    drawBgFrame();
+    requestAnimationFrame(phLoop);
+  }
+
+  // Podest im Ergebnis-Fenster
+  let confetti = [];
+  function initConfetti() {
+    confetti = [];
+    if (S.collapsed) return;
+    const cols = ['#f87171', '#fbbf24', '#4ade80', '#38bdf8', '#c084fc', '#ffffff'];
+    for (let k = 0; k < 70; k++) confetti.push({ x: Math.random() * 700, y: Math.random() * 250 - 250, vy: 0.8 + Math.random() * 1.6, vx: (Math.random() - 0.5) * 0.8, r: 2 + Math.random() * 3, c: cols[k % cols.length], rot: Math.random() * 6 });
+  }
+  function drawPodiumFrame() {
+    if (!$('resultModal').classList.contains('active') || $('resMain').style.display === 'none') return;
+    const c = $('podiumCanvas').getContext('2d'), t = performance.now() / 1000;
+    c.clearRect(0, 0, 700, 250);
+    const r = computeRank(S.totals), maxP = Math.max(...r.map(x => x.place));
+    const ground = 218;
+    c.fillStyle = 'rgba(15,23,42,0.6)'; c.fillRect(0, ground, 700, 32);
+    const slots = S.game === 2
+      ? [{ x: 100, h: 0 }, { x: 225, h: 0 }, { x: 350, h: 0 }, { x: 475, h: 0 }, { x: 600, h: 0 }]   // Spiel 2: alle gemeinsam, kein Podest
+      : [{ x: 350, h: 84 }, { x: 225, h: 58 }, { x: 475, h: 40 }, { x: 100, h: 0 }, { x: 600, h: 0 }];
+    slots.forEach((sl, k) => {
+      const rr = S.game === 2 ? { i: k, place: 0 } : r[k];
+      if (sl.h > 0) {
+        c.fillStyle = ['#fbbf24', '#cbd5e1', '#d97706'][k]; c.fillRect(sl.x - 42, ground - sl.h, 84, sl.h);
+        c.fillStyle = '#0f172a'; c.font = '800 22px Segoe UI, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillText(String(rr.place), sl.x, ground - sl.h / 2);
+      }
+      const st = blankSt();
+      if (S.collapsed) st.shock = true;
+      else if (S.game === 2) st.cheer = true;
+      else if (rr.place === 1) { st.crown = true; st.cheer = true; }
+      else if (maxP > 1 && rr.place === maxP) st.sad = true;
+      drawChar(c, rr.i, sl.x, ground - sl.h, 1.15, st, t, 1, 0.1);
+      c.fillStyle = COLORS[rr.i]; c.font = '700 13px Segoe UI, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('Firma ' + (rr.i + 1), sl.x, ground + 16);
+    });
+    confetti.forEach(p => {
+      p.y += p.vy; p.x += p.vx; p.rot += 0.1;
+      if (p.y > 252) { p.y = -8; p.x = Math.random() * 700; }
+      c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.fillStyle = p.c; c.fillRect(-p.r, -p.r / 2, p.r * 2, p.r); c.restore();
+    });
+  }
+
+  // Hintergrund: Himmel, Sonne, Wolken, Hügel, Wiese, Bäume. Das Wetter folgt dem Bestand.
+  const bgCv = $('bgCanvas'), bgCtx = bgCv.getContext('2d');
+  let bgW = 0, bgH = 0, bgHealth = 1, bgTrees = [], bgTick = 0;
+
+  function mix(a, b, t) {
+    const p = n => [1, 3, 5].map(k => parseInt(n.slice(k, k + 2), 16));
+    const A = p(a), B = p(b);
+    return 'rgb(' + A.map((v, k) => Math.round(v + (B[k] - v) * t)).join(',') + ')';
+  }
+  function pal(h, dead, mid, good) { return h < 0.5 ? mix(dead, mid, h * 2) : mix(mid, good, (h - 0.5) * 2); }
+
+  function bgResize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    bgW = window.innerWidth; bgH = window.innerHeight;
+    bgCv.width = Math.round(bgW * dpr); bgCv.height = Math.round(bgH * dpr);
+    bgCv.style.width = bgW + 'px'; bgCv.style.height = bgH + 'px';
+    bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Bäume mit fester Zufallsfolge, damit sie nicht springen
+    let seed = 12345;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+    bgTrees = [];
+    [{ y: 0.70, sc: 0.7, n: Math.ceil(bgW / 55) }, { y: 0.80, sc: 1.0, n: Math.ceil(bgW / 80) }, { y: 0.93, sc: 1.5, n: Math.ceil(bgW / 140) }].forEach(rw => {
+      for (let k = 0; k < rw.n; k++) {
+        const x = (k + rnd() * 0.8) / rw.n * bgW;
+        if (Math.abs(x - bgW / 2) < 500 && rnd() < 0.6) continue;   // hinter der Arena weniger Bäume
+        bgTrees.push({ x: x, y: bgH * rw.y + rnd() * bgH * 0.03, s: rw.sc * (0.8 + rnd() * 0.5), type: rnd() < 0.55 ? 0 : 1, ph: rnd() * 6.28, bare: rnd() < 0.5 });
+      }
+    });
+    bgTrees.sort((a, b) => a.y - b.y);
+  }
+
+  function bgTarget() {
+    if (IS_PHONE) return ST ? (ST.collapsed ? 0 : Math.max(0, Math.min(1, ST.pool / ST.max))) : 1;
+    return S.collapsed ? 0 : Math.max(0, Math.min(1, (S.pool - (anim ? anim.taken : 0)) / S.max));
+  }
+
+  function hill(c, W, H, base, amp, f, ph, color) {
+    c.fillStyle = color; c.beginPath(); c.moveTo(0, H);
+    for (let x = 0; x <= W; x += 24) c.lineTo(x, base + Math.sin(x * f + ph) * amp + Math.sin(x * f * 2.3 + ph * 2) * amp * 0.4);
+    c.lineTo(W, H); c.closePath(); c.fill();
+  }
+
+  function drawTree(c, tr, cols, h, t) {
+    const k = tr.s, x = tr.x, y = tr.y, sway = Math.sin(t * 1.1 + tr.ph) * 2 * k;
+    c.fillStyle = '#5b3a1e'; c.fillRect(x - 4 * k, y - 26 * k, 8 * k, 26 * k);
+    if (h < 0.3 && tr.bare) {   // kahle Bäume, wenn der See stirbt
+      c.strokeStyle = '#5b3a1e'; c.lineWidth = 2.5 * k; c.lineCap = 'round';
+      c.beginPath();
+      c.moveTo(x, y - 24 * k); c.lineTo(x - 14 * k + sway, y - 50 * k);
+      c.moveTo(x, y - 30 * k); c.lineTo(x + 13 * k + sway, y - 54 * k);
+      c.moveTo(x, y - 40 * k); c.lineTo(x - 6 * k + sway, y - 66 * k);
+      c.stroke();
+      return;
+    }
+    if (tr.type === 0) {         // Tanne
+      c.fillStyle = cols.pine;
+      for (let j = 0; j < 3; j++) {
+        c.beginPath();
+        c.moveTo(x + sway * (0.5 + j * 0.3), y - (26 + j * 18 + 24) * k);
+        c.lineTo(x - (17 - j * 3.5) * k, y - (16 + j * 18) * k);
+        c.lineTo(x + (17 - j * 3.5) * k, y - (16 + j * 18) * k);
+        c.closePath(); c.fill();
+      }
+    } else {                     // Laubbaum
+      ell(c, x + sway * 0.6, y - 46 * k, 20 * k, 18 * k, cols.round);
+      ell(c, x - 12 * k + sway * 0.5, y - 36 * k, 14 * k, 12 * k, cols.round);
+      ell(c, x + 13 * k + sway * 0.5, y - 37 * k, 14 * k, 12 * k, cols.round);
+    }
+  }
+
+  function drawBgFrame() {
+    bgTick++;
+    bgHealth += (bgTarget() - bgHealth) * 0.04;
+    if (bgTick % 2) return;       // jedes zweite Bild reicht
+    const c = bgCtx, W = bgW, H = bgH, h = bgHealth, t = performance.now() / 1000, gy = H * 0.64;
+    // Himmel
+    const sky = c.createLinearGradient(0, 0, 0, gy);
+    sky.addColorStop(0, pal(h, '#57534e', '#64748b', '#3b9ae1'));
+    sky.addColorStop(1, pal(h, '#a8a29e', '#cbd5e1', '#bde3f7'));
+    c.fillStyle = sky; c.fillRect(0, 0, W, H);
+    // Sonne (verschwindet bei schlechtem Bestand)
+    const sa = Math.max(0, Math.min(1, (h - 0.25) / 0.5));
+    if (sa > 0) {
+      const sx = W * 0.84, sy = H * 0.16, g = c.createRadialGradient(sx, sy, 6, sx, sy, 90);
+      g.addColorStop(0, 'rgba(254,240,138,' + (0.95 * sa) + ')'); g.addColorStop(1, 'rgba(254,240,138,0)');
+      c.fillStyle = g; c.fillRect(sx - 100, sy - 100, 200, 200);
+      ell(c, sx, sy, 26, 26, 'rgba(253,224,71,' + sa + ')');
+    }
+    // Wolken (werden grau)
+    const cl = pal(h, '#78716c', '#d1d5db', '#ffffff');
+    c.globalAlpha = 0.78 + (1 - h) * 0.18;
+    for (let k = 0; k < 6; k++) {
+      const cx = ((t * (6 + k * 2) + k * 260) % (W + 300)) - 150, cy = H * (0.08 + (k % 3) * 0.08) + Math.sin(k) * 10, s = 0.8 + (k % 3) * 0.3;
+      ell(c, cx, cy, 46 * s, 16 * s, cl); ell(c, cx - 26 * s, cy + 4 * s, 28 * s, 12 * s, cl); ell(c, cx + 28 * s, cy + 3 * s, 32 * s, 13 * s, cl);
+    }
+    c.globalAlpha = 1;
+    // Hügel und Wiese
+    hill(c, W, H, gy - 10, 28, 0.004, 1, pal(h, '#57534e', '#5f7f6a', '#4b9a73'));
+    hill(c, W, H, gy + 6, 22, 0.006, 3, pal(h, '#6b4423', '#5b8a2f', '#2f9e5a'));
+    const gr = c.createLinearGradient(0, gy, 0, H);
+    gr.addColorStop(0, pal(h, '#7c4a1e', '#6a9a2a', '#37a34a')); gr.addColorStop(1, pal(h, '#4a2c12', '#3f6212', '#15803d'));
+    c.fillStyle = gr; c.fillRect(0, gy + 10, W, H - gy);
+    // Bäume
+    const cols = { pine: pal(h, '#78350f', '#4d7c0f', '#166534'), round: pal(h, '#92400e', '#65a30d', '#22a652') };
+    bgTrees.forEach(tr => drawTree(c, tr, cols, h, t));
+    // leicht abdunkeln, damit die Oberfläche gut lesbar bleibt
+    c.fillStyle = 'rgba(11,25,44,0.22)'; c.fillRect(0, 0, W, H);
   }
 
   /* ================= Handy-Ansicht ================= */
@@ -797,12 +1410,12 @@
   function phTimer() {
     const el = $('phTimer');
     if (!ST) { el.textContent = '⏱️ –'; el.classList.remove('alarm'); return; }
-    if (ST.phase === 'running' && ST.timerEnd) {
+    if ((ST.phase === 'running' || ST.phase === 'talk') && ST.timerEnd) {
       const left = phTimeLeft();
       el.textContent = '⏱️ ' + left + 's';
       el.classList.toggle('alarm', left === 0);
       if (left === 0) phRender();
-    } else if (ST.phase === 'ready') {
+    } else if (ST.phase === 'ready' || ST.phase === 'talk') {
       el.textContent = '⏱️ wartet auf Start'; el.classList.remove('alarm');
     } else if (ST.phase === 'collect') {
       el.textContent = '⏰ Zeit abgelaufen'; el.classList.add('alarm');
@@ -811,33 +1424,38 @@
     }
   }
 
-  let phLastCan = null;
   function phRender() {
     const g = PHONE_G - 1;
     const stale = !!ST && Date.now() - lastMsg > 10000;
     $('phConn').textContent = !connOk ? '🔴 keine Verbindung …' : (stale ? '🟡 Verbindung wird erneuert …' : '🟢 live verbunden');
     if (!ST) {
       $('phRound').textContent = '⏳ Warte auf den Host …';
+      $('phStock').textContent = '';
       $('phControls').style.display = 'none';
       $('phMsg').innerHTML = '';
       phTimer();
       return;
     }
     const ph = ST.phase;
-    $('phRound').textContent = ST.over ? '🏁 Spiel beendet' : 'Runde ' + ST.round + ' / 3';
+    $('phRound').textContent = ST.over ? '🏁 Spiel beendet' : (ph === 'talk' ? '💬 Verhandlung' : 'Runde ' + ST.round + ' / ' + (ST.rounds || ROUNDS));
+    $('phMandate').innerHTML = ST.game === 2
+      ? '📜 <b>Auftrag:</b> Erhaltet den See und alle Firmen für zehn Jahre.<br>🗣️ Ihr dürft jetzt mit den anderen Firmen sprechen.<br>💡 Was im See übrig bleibt, verdoppelt sich (höchstens bis zum Startbestand).<br>⚖️ Gesetz: höchstens 8 Fische pro Runde · 💶 €1.000 pro Fisch.'
+      : '📜 <b>Auftrag:</b> Maximiert den Gewinn eurer Firma.<br>⚖️ <b>Gesetz:</b> Höchstens 8 Fische pro Runde.<br>💶 Jeder Fisch bringt €1.000.';
+    $('phStock').textContent = '🐟 Im See: ' + ST.pool + ' von ' + ST.max;
     const showCtl = ['ready', 'running', 'collect'].indexOf(ph) >= 0 && !ST.over;
     $('phControls').style.display = showCtl ? 'block' : 'none';
 
     const can = phCanEdit();
     document.querySelectorAll('#phControls button, #phControls input').forEach(e => { e.disabled = !can; });
     if (document.activeElement !== $('phInput')) $('phInput').value = phVal;
+    $('phWarn').textContent = (showCtl && phVal > LIMIT) ? '⚠️ Über dem Limit von ' + LIMIT + '! Das wäre illegal.' : '';
 
     let msg = '';
     const s = ST.submitted[g];
     if (showCtl) {
       if (ph === 'ready') {
         msg = '<span style="color:#94a3b8;">⏳ Warte, bis der Host den Timer startet.<br>Erst dann kannst du eingeben.</span>';
-        if (ST.last) msg += '<br><span style="font-size:14px;color:#94a3b8;">Letzte Runde: gefangen ' + ST.last.actual[g] + ' · Korb gesamt ' + ST.totals[g] + ' 🐟</span>';
+        if (ST.last && !ST.last.dead) msg += '<br><span style="font-size:14px;color:#94a3b8;">Letzte Runde: gefangen ' + ST.last.actual[g] + ' · Gewinn gesamt ' + eur(ST.totals[g]) + '</span>';
       } else if (ST.locked[g]) {
         msg = '<span style="color:#fbbf24;">🔒 Vom Host gesperrt</span>';
       } else if (ph === 'running') {
@@ -857,17 +1475,25 @@
         msg = '<span style="color:#f87171;">⏰ Eingabe geschlossen.</span><br>' +
               (s !== null ? 'Eingetragen: <b>' + s + '</b> 🐟' : 'Es wurde nichts gesendet.');
       }
+    } else if (ph === 'talk') {
+      msg = ST.timerEnd
+        ? '💬 <span style="color:#4ade80;">Verhandlung läuft!</span><br>Sprecht jetzt mit den anderen Firmen: Einigt euch auf eine Gesamtmenge und die Verteilung.'
+        : '💬 Gleich beginnt die Verhandlung. Der Host startet sie.';
     } else if (ph === 'animating') {
       msg = '🎣 Der Fang wird ausgeführt …';
     } else if (ST.last) {
       const l = ST.last;
-      msg = 'Runde ' + l.round + ' ausgewertet:<br>Gewünscht <b>' + l.asked[g] + '</b> · Gefangen <b style="color:#4ade80;">' + l.actual[g] + '</b> 🐟<br>' +
-            'Dein Korb gesamt: <b>' + ST.totals[g] + '</b> 🐟<br>' +
-            '🏆 Platz <b>' + computeRank(ST.totals).find(r => r.i === g).place + '</b> von 5';
-      if (ST.pool !== null && l.start !== null) msg += '<br><span style="font-size:14px;color:#94a3b8;">Teich: ' + l.start + ' → ' + l.end + ' Fische</span>';
-      if (ST.collapsed) msg += '<br><span style="color:#f87171;">💀 Der Bestand ist zusammengebrochen!</span>';
+      const place = computeRank(ST.totals).find(r => r.i === g).place;
+      if (l.dead) {
+        msg = '<span style="color:#f87171;">💀 Der See ist tot!</span><br>Alle Firmen bestellten zusammen <b>' + l.demand + '</b> Fische, im See waren nur <b>' + l.start + '</b>.<br>Niemand hat in dieser Runde etwas gefangen.';
+      } else {
+        msg = 'Runde ' + l.round + ' ausgewertet:<br>Bestellt <b>' + l.asked[g] + '</b> · Gefangen <b style="color:#4ade80;">' + l.actual[g] + '</b> 🐟 = ' + eur(l.actual[g]);
+        if (l.asked[g] > LIMIT) msg += '<br><span style="color:#f87171;">⚠️ Über dem Limit von ' + LIMIT + ': illegal!</span>';
+      }
+      msg += '<br>Dein Gewinn gesamt: <b>' + eur(ST.totals[g]) + '</b>';
+      if (ST.game !== 2) msg += '<br>🏆 Platz <b>' + place + '</b> von 5';
+      if (!l.dead && !ST.over) msg += '<br><span style="font-size:14px;color:#94a3b8;">Neuer Bestand im See: ' + l.end + '<br>⏳ Warte auf die nächste Runde …</span>';
       else if (ST.over) msg += '<br><span style="color:#38bdf8;">Danke fürs Mitspielen!</span>';
-      else msg += '<br><span style="font-size:14px;color:#94a3b8;">⏳ Warte auf die nächste Runde …</span>';
     }
     $('phMsg').innerHTML = msg;
     phTimer();
@@ -885,14 +1511,17 @@
 
   /* ================= Start ================= */
   (function init() {
+    bgResize();
+    window.addEventListener('resize', bgResize);
     if (IS_PHONE) {
       $('hostView').style.display = 'none';
       $('phoneView').style.display = 'block';
-      $('phTitle').textContent = 'Gruppe ' + PHONE_G;
+      $('phTitle').textContent = 'Firma ' + PHONE_G;
       $('phTitle').style.color = COLORS[PHONE_G - 1];
-      document.title = 'Gruppe ' + PHONE_G + ' – Fischerei';
+      document.title = 'Firma ' + PHONE_G + ' – Fischerei';
       if (!ROOM) { $('phRound').textContent = '❌ Kein Raum im Link. Bitte den QR-Code erneut scannen.'; $('phControls').style.display = 'none'; return; }
       phRender();
+      requestAnimationFrame(phLoop);
       mqttStart('p' + PHONE_G, phOnMessage,
         () => {
           mq.subscribe(T_STATE, { qos: 1 });
