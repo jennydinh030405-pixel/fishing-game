@@ -95,6 +95,17 @@
     .speech::before { content: ""; position: absolute; top: -9px; left: 50%; margin-left: -9px; border: 9px solid transparent; border-top: 0; border-bottom-color: #fff; }
     .speech.lead { background: #fef3c7; }
     .speech.chase { background: #fee2e2; }
+    #printView { position: fixed; inset: 0; background: #fff; z-index: 500; overflow: auto; }
+    #printGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px; }
+    .pcard { border: 3px dashed #94a3b8; border-radius: 14px; padding: 12px; text-align: center; color: #0f172a; break-inside: avoid; }
+    .pcard h2 { margin: 0; font-size: 34px; }
+    .pcard img { width: 100%; max-width: 280px; }
+    .pcard small { color: #475569; display: block; margin-top: 4px; }
+    @media print {
+      body > *:not(#printView) { display: none !important; }
+      #printView { position: static; display: block !important; }
+      .no-print { display: none !important; }
+    }
     .mandate { margin-top: 10px; background: #0f172a; border: 1px solid #f59e0b; border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 1.5; color: #fde68a; text-align: left; }
     .ctrl-row { display: flex; justify-content: center; align-items: center; gap: 7px; margin: 16px 0 8px; }
     .btn-step { width: 42px; height: 48px; font-size: 16px; background: #334155; color: white; border-radius: 12px; }
@@ -118,13 +129,17 @@
         <span class="badge law">⚖️ Limit: 8 Fische</span>
         <span class="badge">💶 €1.000 pro Fisch</span>
         <span class="badge" id="connBadge">📡 verbinde …</span>
+        <span class="badge" id="roomBadge"></span>
       </div>
 
+      <div id="dupHost" style="display:none; background:#7f1d1d; color:#fff; font-weight:800; padding:10px 14px; border-radius:10px; margin:8px 0;">⚠️ Achtung: Dieser Raum wird gerade noch von einer zweiten Host-Seite gesteuert (anderer Tab oder anderes Gerät). Schließe die andere Seite, sonst überschreiben sich beide!</div>
       <div class="controls">
         <label style="color:#94a3b8;">Start-Fische:</label>
         <input type="number" id="initFishInput" value="50" min="5" max="500" style="width:62px; padding:5px;">
         <button class="btn-ghost" onclick="setPool()">Bestand setzen</button>
         <button class="btn-primary" onclick="toggleQR(true)">📱 5 QR-Codes</button>
+        <button class="btn-ghost" onclick="openPrint()">🖨️ QR-Codes drucken</button>
+        <button class="btn-ghost" onclick="copyHostLink()">🔗 Host-Link kopieren</button>
         <button id="secretBtn" class="btn-ghost" onclick="toggleSecret()">🙈 Geheimmodus: AN</button>
         <button class="btn-primary" onclick="openManual()">✏️ Fänge manuell</button>
         <button id="gameBtn" class="btn-amber" onclick="switchGame()">🎮 Spiel 2 starten</button>
@@ -168,6 +183,14 @@
   </div>
 
   <!-- QR-MODAL -->
+  <div id="printView" style="display:none;">
+    <div class="no-print" style="padding:14px; text-align:center; background:#0f172a; color:#e2e8f0;">
+      <b>QR-Codes zum Ausdrucken</b> · Gleich beim Drucken: "Kopf- und Fußzeilen" ausschalten, Hochformat A4.
+      <button class="btn-green" style="margin-left:10px; padding:8px 16px;" onclick="window.print()">🖨️ Drucken</button>
+      <button class="btn-primary" style="margin-left:6px; padding:8px 16px;" onclick="closePrint()">Schließen</button>
+    </div>
+    <div id="printGrid"></div>
+  </div>
   <div class="modal" id="confirmModal" style="z-index:300;">
     <div class="modal-box" style="max-width:520px;">
       <p id="confirmText" style="font-size:17px; line-height:1.5; white-space:pre-line; margin:0 0 20px;"></p>
@@ -289,12 +312,19 @@
 
   function randId(n) { let s = ''; const c = 'abcdefghijkmnpqrstuvwxyz23456789'; for (let i = 0; i < n; i++) s += c[Math.floor(Math.random() * c.length)]; return s; }
 
+  // Fester Raumcode für die gedruckten QR-Codes. Host-Link: <Adresse>?room=<Code>
+  const DEFAULT_ROOM = 'fischumx9nycj5jxg';
+  const HID = randId(8);   // Kennung dieser Host-Seite (erkennt einen zweiten Host im selben Raum)
+  const URL_ROOM = (params.get('room') || '').replace(/[^a-z0-9]/gi, '');
   let ROOM = '';
-  if (IS_PHONE) ROOM = (params.get('room') || '').replace(/[^a-z0-9]/gi, '');
+  let FIXED_ROOM = false;
+  if (IS_PHONE) ROOM = URL_ROOM;
+  else if (URL_ROOM.length >= 8) { ROOM = URL_ROOM; FIXED_ROOM = true; }
   else {
     try { ROOM = localStorage.getItem('fischRoom') || ''; } catch (e) {}
     if (!ROOM) { ROOM = randId(8); try { localStorage.setItem('fischRoom', ROOM); } catch (e) {} }
   }
+  const PRINT_ROOM = FIXED_ROOM ? ROOM : DEFAULT_ROOM;
   const T_STATE = 'fischsim/' + ROOM + '/state';
   const T_UP = 'fischsim/' + ROOM + '/up';
 
@@ -372,11 +402,16 @@
   function schedulePublish() { clearTimeout(pubT); pubT = setTimeout(publishState, 150); }
   function publishState() {
     if (!mq || !mq.connected) return;
-    mq.publish(T_STATE, JSON.stringify(snapshot()), { retain: true, qos: 1 });
+    mq.publish(T_STATE, JSON.stringify(Object.assign(snapshot(), { hid: HID })), { retain: true, qos: 1 });
   }
 
   /* ---------- Nachrichten von den Handys ---------- */
-  function onUp(topic, m) {
+  let otherHostT = 0;
+  function onUp(topic, m, pk) {
+    if (topic === T_STATE) {
+      if (m && m.hid && m.hid !== HID && pk && !pk.retain) { otherHostT = Date.now(); $('dupHost').style.display = 'block'; }
+      return;
+    }
     if (topic !== T_UP) return;
     const g = parseInt(m.g, 10) - 1;
     if (!(g >= 0 && g < 5)) return;
@@ -969,6 +1004,29 @@
 
   /* ---------- QR-Codes ---------- */
   function baseUrl() { return location.origin + location.pathname; }
+  function updateRoomBadge() {
+    const b = $('roomBadge');
+    if (FIXED_ROOM) { b.textContent = '🔒 Fester Raum – gedruckte QR-Codes gelten'; b.style.background = '#14532d'; b.style.color = '#bbf7d0'; }
+    else { b.textContent = '⚠️ Zufälliger Raum – gedruckte QR-Codes gelten NICHT'; b.style.background = '#9a3412'; b.style.color = '#ffedd5'; }
+  }
+  function hostLink() { return baseUrl() + '?room=' + DEFAULT_ROOM; }
+  function copyHostLink() {
+    const l = hostLink();
+    const done = () => banner('🔗 Host-Link kopiert. Als Lesezeichen speichern und am Unterrichtstag nur darüber starten: ' + l);
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(l).then(done, () => banner('🔗 Host-Link (bitte markieren und kopieren): ' + l));
+    else banner('🔗 Host-Link (bitte markieren und kopieren): ' + l);
+  }
+  function openPrint() {
+    let h = '';
+    for (let i = 1; i <= 5; i++) {
+      const url = baseUrl() + '?room=' + PRINT_ROOM + '&g=' + i;
+      const src = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=8&data=' + encodeURIComponent(url);
+      h += '<div class="pcard"><h2 style="color:' + ['#b91c1c', '#b45309', '#15803d', '#0369a1', '#7e22ce'][i - 1] + '">Firma ' + i + '</h2><img src="' + src + '" alt="QR Firma ' + i + '"><small>Scannen und einmal öffnen lassen</small></div>';
+    }
+    $('printGrid').innerHTML = h;
+    $('printView').style.display = 'block';
+  }
+  function closePrint() { $('printView').style.display = 'none'; }
   function toggleQR(show) {
     if (show) {
       const base = baseUrl();
@@ -1598,6 +1656,7 @@
   /* ================= Start ================= */
   (function init() {
     updateSecretBtn();
+    if (!IS_PHONE) updateRoomBadge();
     bgResize();
     window.addEventListener('resize', bgResize);
     if (IS_PHONE) {
@@ -1636,10 +1695,10 @@
     render();
     loop();
     // Herzschlag: aktuellen Stand regelmäßig an alle Handys senden (hält auch Timer-Uhren synchron)
-    setInterval(() => { if (mq && mq.connected) publishState(); }, 4000);
+    setInterval(() => { if (mq && mq.connected) publishState(); if (otherHostT && Date.now() - otherHostT > 12000) { otherHostT = 0; $('dupHost').style.display = 'none'; } }, 4000);
     document.addEventListener('visibilitychange', () => { if (!document.hidden && !connOk) mqttRestart(); });
     mqttStart('host', onUp,
-      () => { mq.subscribe(T_UP, { qos: 1 }); publishState(); },
+      () => { mq.subscribe(T_UP, { qos: 1 }); mq.subscribe(T_STATE, { qos: 1 }); publishState(); },
       (ok, why) => {
         $('connBadge').textContent = why === 'lib' ? '❌ Live-Bibliothek fehlt' : (ok ? '📡 Live verbunden' : '📡 verbinde …');
       });
