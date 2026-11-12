@@ -125,6 +125,7 @@
       <input type="password" id="pwInput" inputmode="numeric" autocomplete="off" placeholder="Passwort" style="width:100%; padding:12px; font-size:20px; text-align:center; border-radius:10px; border:2px solid #475569; background:#0f172a; color:#fff;" onkeydown="if(event.key==='Enter')tryUnlock()">
       <div id="pwErr" style="color:#f87171; min-height:22px; margin:8px 0; font-weight:700;"></div>
       <button class="btn-green" style="width:100%; padding:12px; font-size:16px;" onclick="tryUnlock()">Eintreten</button>
+      <button class="btn-ghost" id="pwCancel" style="width:100%; padding:10px; margin-top:8px; display:none;" onclick="cancelPw()">Abbrechen</button>
     </div>
   </div>
 
@@ -148,8 +149,8 @@
         <input type="number" id="initFishInput" value="50" min="5" max="500" style="width:62px; padding:5px;">
         <button class="btn-ghost" onclick="setPool()">Bestand setzen</button>
         <button class="btn-primary" onclick="toggleQR(true)">📱 5 QR-Codes</button>
-        <button class="btn-ghost" onclick="openPrint()">🖨️ QR-Codes drucken</button>
-        <button class="btn-ghost" onclick="copyHostLink()">🔗 Host-Link kopieren</button>
+        <button class="btn-ghost" onclick="requirePw(openPrint)">🖨️ QR-Codes drucken</button>
+        <button class="btn-ghost" onclick="requirePw(copyHostLink)">🔗 Host-Link kopieren</button>
         <button id="secretBtn" class="btn-ghost" onclick="toggleSecret()">🙈 Geheimmodus: AN</button>
         <button class="btn-primary" onclick="openManual()">✏️ Fänge manuell</button>
         <button id="gameBtn" class="btn-amber" onclick="switchGame()">🎮 Spiel 2 starten</button>
@@ -323,6 +324,7 @@
   function randId(n) { let s = ''; const c = 'abcdefghijkmnpqrstuvwxyz23456789'; for (let i = 0; i < n; i++) s += c[Math.floor(Math.random() * c.length)]; return s; }
 
   // Fester Raumcode für die gedruckten QR-Codes. Host-Link: <Adresse>?room=<Code>
+  const HOST_PW = '9999';
   const DEFAULT_ROOM = 'fischumx9nycj5jxg';
   const HID = randId(8);   // Kennung dieser Host-Seite (erkennt einen zweiten Host im selben Raum)
   const URL_ROOM = (params.get('room') || '').replace(/[^a-z0-9]/gi, '');
@@ -1715,14 +1717,24 @@
   }
 
   // Host-Passwort (einfache Sperre gegen versehentliches Öffnen, kein echter Schutz)
-  const HOST_PW = '9999';
+  let gateAction = null;
+  // Aktionen, die den Raumcode preisgeben (Host-Link kopieren, QR-Codes drucken), brauchen das Passwort
+  function requirePw(fn) {
+    if (IS_PHONE || FIXED_ROOM || hostUnlocked()) { fn(); return; }
+    gateAction = fn;
+    $('pwErr').textContent = ''; $('pwInput').value = '';
+    $('pwCancel').style.display = 'block';
+    $('pwGate').style.display = 'flex';
+    setTimeout(() => $('pwInput').focus(), 50);
+  }
+  function cancelPw() { gateAction = null; $('pwGate').style.display = 'none'; }
   function hostUnlocked() { try { return sessionStorage.getItem('fischHostOk') === '1'; } catch (e) { return false; } }
   function tryUnlock() {
     const v = $('pwInput').value.trim();
     if (v === HOST_PW) {
       try { sessionStorage.setItem('fischHostOk', '1'); } catch (e) {}
       $('pwGate').style.display = 'none';
-      init();
+      if (gateAction) { const a = gateAction; gateAction = null; a(); } else init();
     } else {
       $('pwErr').textContent = '❌ Falsches Passwort';
       $('pwInput').value = ''; $('pwInput').focus();
