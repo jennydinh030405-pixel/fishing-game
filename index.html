@@ -1024,7 +1024,7 @@
   function hostLink() { return baseUrl() + '?room=' + DEFAULT_ROOM; }
   function copyHostLink() {
     const l = hostLink();
-    const done = () => banner('🔗 Host-Link kopiert. Als Lesezeichen speichern und am Unterrichtstag nur darüber starten: ' + l);
+    const done = () => banner('🔗 Host-Link kopiert.: ' + l);
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(l).then(done, () => banner('🔗 Host-Link (bitte markieren und kopieren): ' + l));
     else banner('🔗 Host-Link (bitte markieren und kopieren): ' + l);
   }
@@ -1033,7 +1033,7 @@
     for (let i = 1; i <= 5; i++) {
       const url = baseUrl() + '?room=' + PRINT_ROOM + '&g=' + i;
       const src = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=8&data=' + encodeURIComponent(url);
-      h += '<div class="pcard"><h2 style="color:' + ['#b91c1c', '#b45309', '#15803d', '#0369a1', '#7e22ce'][i - 1] + '">Firma ' + i + '</h2><img src="' + src + '" alt="QR Firma ' + i + '"><small>Scannen und einmal öffnen lassen</small><div class="pwarn">Nur ein Gerät pro Team – keine zweite Anmeldung!</div></div>';
+      h += '<div class="pcard"><h2 style="color:' + ['#b91c1c', '#b45309', '#15803d', '#0369a1', '#7e22ce'][i - 1] + '">Firma ' + i + '</h2><img src="' + src + '" alt="QR Firma ' + i + '"><small>Scannen und einmal öffnen lassen</small><div class="pwarn">Bitte nur ein Gerät pro Team. Keine zweite Anmeldung!</div></div>';
     }
     $('printGrid').innerHTML = h;
     $('printView').style.display = 'block';
